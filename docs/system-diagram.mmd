@@ -1,0 +1,14 @@
+flowchart LR
+  A[Applicant: Web Form] -->|submit| B(Frontend React)
+  B -->|POST /api/applications| C(Backend - Orchestrator)
+  C --> D[DB: Applications & Docs]
+  C --> E{Has bank statement?}
+  E -->|Yes| F[Repayment Parser]
+  F --> G{Repayment OK?}
+  E -->|No| H[Income Verification & Proxy Eval]
+  G -->|Yes| I[ML Service (repayment-model)]
+  H -->|Proxy ok| J[ML Service (proxy/income-model)]
+  I --> K[Score & Explainability]
+  J --> K
+  K --> L[Officer Dashboard / Notifications]
+  L --> M[Approve / Reject / Manual Review]
