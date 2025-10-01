@@ -1,13 +1,13 @@
 # Project Board — SafeCred (Phase 0)
 
 ## Phase 0 — Today (Goals)
-- [ ] Add `docs/orchestration.md` (Vayu) ✅
-- [ ] Add `docs/system-diagram.mmd` (Vayu) ✅
-- [ ] Add `infra/config.json` (Vayu) ✅
-- [ ] Add README Phase 0 section (Vayu) ✅
+- [x] Add `docs/orchestration.md` (Vayu) ✅
+- [x] Add `docs/system-diagram.mmd` (Vayu) ✅
+- [x] Add `infra/config.json` (Vayu) ✅
+- [x] Add README Phase 0 section (Vayu) ✅
 - [ ] Create backend skeleton (Sudhanshu)
 - [ ] Create frontend skeleton (Arvind)
-- [ ] Invite team members to repo & set branch rules (Vayu)
+- [x] Invite team members to repo & set branch rules (Vayu)
 
 ## Owners & Contacts
 - Vayu (Lead / AI-ML): @vayugautam
