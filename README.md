@@ -119,7 +119,4 @@ curl -X POST http://localhost:5000/api/applications/app_9876/documents \
 -F "type=salary"
 ```
 
-## Notes
-- Keep README updated with API contract changes  
-- Lead (Divya) will merge frontend & backend PRs after basic integration test
 
