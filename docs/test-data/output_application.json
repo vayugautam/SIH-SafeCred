@@ -1,0 +1,6 @@
+{
+  "applicationId": "app_12345",
+  "status": "READY_FOR_SCORING",
+  "message": "Application submitted successfully",
+  "score": null
+}

@@ -1,0 +1,4 @@
+userId,loanId,amount,tenure_months,repaid_on_time
+user_001,loan_01,5000,6,true
+user_001,loan_02,8000,12,false
+user_002,loan_03,10000,10,true
