@@ -1,39 +1,38 @@
-%% File: /docs/system-diagram.mmd
 flowchart TD
     %% Applicant Journey
-    A([Step 1: Beneficiary submits Loan Application\n(Loan Amount, Tenure, Declared Income, Documents, Bank Statement)])
+    A[Step 1: Beneficiary submits Loan Application - Loan Amount, Tenure, Declared Income, Documents, Bank Statement]
     
     %% Backend Orchestrator
-    B([Step 2: Backend Orchestrator\n(Collects data, stores files, starts verification pipeline)])
+    B[Step 2: Backend Orchestrator - Collects data, stores files, starts verification pipeline]
     
     %% Verification Layer
-    C([Step 3: Repayment History Analysis\n(Check past loan repayments)])
-    D([Step 4: Income Verification\n(Compare Declared vs Bank Inflows)])
+    C[Step 3: Repayment History Analysis - Check past loan repayments]
+    D[Step 4: Income Verification - Compare Declared vs Bank Inflows]
     E{Mismatch > 10% ?}
     
     %% Branch 1 - Stable Income
-    F1([Stable/Fix Income Earner\n→ Flag for Manual Review])
+    F1[Stable/Fix Income Earner → Flag for Manual Review]
     
     %% Branch 2 - Informal Income
-    F2([Seasonal/Informal Earner\n→ Use Alternative Proxies:\nMobile Recharges, Electricity, Utilities])
+    F2[Seasonal/Informal Earner → Use Alternative Proxies: Mobile Recharges, Electricity, Utilities]
     
     %% Features for ML
-    G([Step 5: Feature Vector Assembly\n(Repayment Score, Income/Proxy Score, Repeat Borrower Flag)])
+    G[Step 5: Feature Vector Assembly - Repayment Score, Income/Proxy Score, Repeat Borrower Flag]
     
     %% ML Scoring
-    H([Step 6: ML Scoring Service (FastAPI)\n(Logistic Regression / LightGBM)])
-    I([Step 7: Composite Credit Score (0–100)])
+    H[Step 6: ML Scoring Service (FastAPI) - Logistic Regression / LightGBM]
+    I[Step 7: Composite Credit Score (0–100)]
     
     %% Risk Classification
     J{Step 8: Risk Band Classification}
-    K1([Score ≥ 80 → Auto-Approve])
-    K2([Score 60–79 → Manual Officer Review])
-    K3([Score < 60 → Reject])
+    K1[Score ≥ 80 → Auto-Approve]
+    K2[Score 60–79 → Manual Officer Review]
+    K3[Score < 60 → Reject]
     
     %% Outputs
-    L([Step 9: Officer Dashboard\n(Details, Score, Explainability)])
-    M([Step 10: Admin Dashboard\n(Fraud %, Risk %, Approvals)])
-    N([Step 11: Applicant Notified\n(Status Update)])
+    L[Step 9: Officer Dashboard - Details, Score, Explainability]
+    M[Step 10: Admin Dashboard - Fraud %, Risk %, Approvals]
+    N[Step 11: Applicant Notified - Status Update]
     
     %% Connections
     A --> B --> C --> D --> E
