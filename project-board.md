@@ -1,28 +1,44 @@
-# Project Board — SafeCred (Phase 0)
+# Project Board (Phase 0) — SafeCred (SIH25150)
 
-## Phase 0 — Today (Goals)
-- [x] Add `docs/orchestration.md` (Vayu) ✅
-- [x] Add `docs/system-diagram.mmd` (Vayu) ✅
-- [x] Add `infra/config.json` (Vayu) ✅
-- [x] Add README Phase 0 section (Vayu) ✅
-- [ ] Create backend skeleton (Sudhanshu)
-- [ ] Create frontend skeleton (Arvind)
-- [x] Invite team members to repo & set branch rules (Vayu)
+## Owners
+- Vayu (Lead, AI/ML)
+- Ayush (AI/ML Support)
+- Sudhanshu (Backend/MERN)
+- Arvind (Frontend/MERN)
 
-## Owners & Contacts
-- Vayu (Lead / AI-ML): @vayugautam
-- Sudhanshu (Backend): @sudhanshu
-- Arvind (Frontend): @arvind
-- Ayush (ML support): @ayush  (joins soon)
+## Phase 0 Checklist (complete by Oct 2)
+- [x] Repo baseline (README + .gitignore + license) — Owner: Sudhanshu
+- [x] Onboard all members to repo + set branch rules — Owner: Vayu
+- [x] Orchestration pseudocode — Owner: Vayu (file: /docs/orchestration.md)
+- [x] System diagram (Mermaid) — Owner: Vayu (file: /docs/system-diagram.mmd)
+- [x] infra/config.json (thresholds) — Owner: Vayu (file: /infra/config.json)
+- [x] Project board file + owners — Owner: Vayu (file: /docs/project-board.md)
+- [x] Wireframes / basic UI mockups (applicant + officer + admin) — Owner: Arvind
+- [x] Mock datasets (synthetic bank statements, proxies) — Owner: Ayush
+- [x] Basic repo structure (folders for frontend/backend/ml/docs) — Owner: Sudhanshu
 
-## Issues to create (examples)
-1. feat/backend-init — create express app, db connection (owner: Sudhanshu)
-2. feat/frontend-init — create react app, basic form (owner: Arvind)
-3. chore/docs-orchestration — add orchestration.md (owner: Vayu)
-4. chore/system-diagram — add mermaid diagram (owner: Vayu)
+## Repo structure (recommended)
+- /frontend (React + Tailwind)
+- /backend (Express + Node)
+- /ml_service (FastAPI + Python)
+- /infra
+  - config.json
+- /docs
+  - orchestration.md
+  - system-diagram.mmd
+  - project-board.md
+- /data/mocks
+  - bank_statements/
+  - proxies/
+- /scripts
+- README.md
 
-## Acceptance Criteria for Phase 0
-- Orchestration doc present in `/docs/` explaining all routes.
-- System diagram in `/docs/` (Mermaid or PNG).
-- `project-board.md` with tasks assigned.
-- All members invited to repo and basic skeletons pushed (frontend & backend).
+## Branch & PR rules (see below for full rules)
+- main (protected): only PRs, require 2 reviews (1 from Lead + 1 from other team)
+- develop: integration branch
+- feature/<member>-<short-desc> for features
+- hotfix/<issue>
+
+## Communication
+- Slack / Discord channel: #safecred
+- Weekly standups: 1 per day during hackathon (quick 10–15 min)
