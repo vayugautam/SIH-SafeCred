@@ -1,0 +1,5 @@
+{
+  "repayment_threshold": 0.8,
+  "proxy_threshold": 0.6,
+  "repeat_borrower_threshold": 0.9
+}

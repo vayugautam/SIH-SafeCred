@@ -1,0 +1,12 @@
+[
+  {
+    "type": "salary",
+    "fileName": "salary_slip.pdf",
+    "status": "UPLOADED"
+  },
+  {
+    "type": "bill",
+    "fileName": "electricity_bill.pdf",
+    "status": "UPLOADED"
+  }
+]
