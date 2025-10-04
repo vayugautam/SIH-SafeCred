@@ -1,26 +1,31 @@
+%% File: /docs/system-diagram.mmd
 flowchart LR
-  A[Applicant: Web Form] --> B(Frontend React)
-  B -->|POST /api/applications| C[Backend Orchestrator]
-  C --> D[(Database)]
-  
-  C --> E{Bank Statement Provided?}
-  E -- Yes --> F[Repayment Parser]
-  F --> G{Repayment OK?}
-  G -- Yes --> H[ML Service: Repayment Model]
-  G -- No --> I[Income Verification]
+    Applicant["Applicant (Web Form + File Upload)"]
+    Frontend["React Frontend (Applicant, Officer, Admin)"]
+    Backend["Express Backend / Orchestrator"]
+    DB["Database (MongoDB / Postgres)"]
+    Storage["File Storage (S3 / MinIO)"]
+    RepayParser["Repayment Parser Module"]
+    IncomeInf["Income Inference Module"]
+    ProxyEval["Proxy Evaluation Service"]
+    MLService["ML Scoring Service (FastAPI)"]
+    OfficerDash["Officer Dashboard"]
+    AdminDash["Admin Dashboard"]
+    Notification["Notification Service (Email/SMS)"]
+    FraudEngine["Fraud Heuristics"]
 
-  E -- No --> I[Income Verification]
-  I --> J{Income Verified?}
-  J -- Yes --> K[ML Service: Income Model]
-  J -- No --> L[Proxy Evaluation]
-  L --> M{Proxy Sufficient?}
-  M -- Yes --> N[ML Service: Proxy Model]
-  M -- No --> O[Manual Review]
-
-  H --> P[Score & Explainability]
-  K --> P
-  N --> P
-  O --> P
-
-  P --> Q[Officer Dashboard / Notifications]
-  Q --> R[Approve / Reject / Manual Review]
+    Applicant -->|submit| Frontend
+    Frontend -->|POST /apply| Backend
+    Backend --> Storage
+    Backend --> DB
+    Backend --> RepayParser
+    RepayParser --> IncomeInf
+    IncomeInf --> ProxyEval
+    ProxyEval --> MLService
+    Backend -->|call ML| MLService
+    MLService -->|score + explain| Backend
+    Backend --> DB
+    Backend --> OfficerDash
+    Backend --> AdminDash
+    Backend --> Notification
+    Backend --> FraudEngine
