@@ -1,28 +1,28 @@
 %% File: /docs/system-diagram.mmd
 flowchart TD
     %% Applicant Journey
-    A([Step 1: Beneficiary submits Loan Application<br>(Loan Amount, Tenure, Declared Income, Documents, Bank Statement)])
+    A([Step 1: Beneficiary submits Loan Application\n(Loan Amount, Tenure, Declared Income, Documents, Bank Statement)])
     
     %% Backend Orchestrator
-    B([Step 2: Backend Orchestrator<br>(Collects data, stores files, starts verification pipeline)])
+    B([Step 2: Backend Orchestrator\n(Collects data, stores files, starts verification pipeline)])
     
     %% Verification Layer
-    C([Step 3: Repayment History Analysis<br>(Check past loan repayments from bank statement)])
-    D([Step 4: Income Verification<br>(Compare Declared Income vs Bank Statement Inflow)])
+    C([Step 3: Repayment History Analysis\n(Check past loan repayments)])
+    D([Step 4: Income Verification\n(Compare Declared vs Bank Inflows)])
     E{Mismatch > 10% ?}
     
     %% Branch 1 - Stable Income
-    F1([Stable/Fix Income Earner<br> → Flag for Manual Review<br>(Possible Fraud Risk)])
+    F1([Stable/Fix Income Earner\n→ Flag for Manual Review])
     
     %% Branch 2 - Informal Income
-    F2([Seasonal/Informal Earner<br> → Use Alternative Proxies<br>(Mobile Recharges, Electricity Bills, Utility Payments)])
+    F2([Seasonal/Informal Earner\n→ Use Alternative Proxies:\nMobile Recharges, Electricity, Utilities])
     
     %% Features for ML
-    G([Step 5: Feature Vector Assembly<br>(Repayment Score, Income/Proxy Score, Repeat Borrower Flag)])
+    G([Step 5: Feature Vector Assembly\n(Repayment Score, Income/Proxy Score, Repeat Borrower Flag)])
     
     %% ML Scoring
-    H([Step 6: ML Scoring Service (FastAPI)<br>→ Logistic Regression / LightGBM Model])
-    I([Step 7: Composite Credit Score 0–100])
+    H([Step 6: ML Scoring Service (FastAPI)\n(Logistic Regression / LightGBM)])
+    I([Step 7: Composite Credit Score (0–100)])
     
     %% Risk Classification
     J{Step 8: Risk Band Classification}
@@ -31,9 +31,9 @@ flowchart TD
     K3([Score < 60 → Reject])
     
     %% Outputs
-    L([Step 9: Officer Dashboard<br>Shows Applicant Details, Score, Explainability])
-    M([Step 10: Admin Dashboard<br>Shows Fraud %, High-Risk %, Approvals Distribution])
-    N([Step 11: Applicant Notified<br>(Approval / Review / Rejection)])
+    L([Step 9: Officer Dashboard\n(Details, Score, Explainability)])
+    M([Step 10: Admin Dashboard\n(Fraud %, Risk %, Approvals)])
+    N([Step 11: Applicant Notified\n(Status Update)])
     
     %% Connections
     A --> B --> C --> D --> E
