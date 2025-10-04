@@ -1,26 +1,48 @@
-flowchart LR
-  A[Applicant: Web Form] --> B(Frontend React)
-  B -->|POST /api/applications| C[Backend Orchestrator]
-  C --> D[(Database)]
-  
-  C --> E{Bank Statement Provided?}
-  E -- Yes --> F[Repayment Parser]
-  F --> G{Repayment OK?}
-  G -- Yes --> H[ML Service: Repayment Model]
-  G -- No --> I[Income Verification]
-
-  E -- No --> I[Income Verification]
-  I --> J{Income Verified?}
-  J -- Yes --> K[ML Service: Income Model]
-  J -- No --> L[Proxy Evaluation]
-  L --> M{Proxy Sufficient?}
-  M -- Yes --> N[ML Service: Proxy Model]
-  M -- No --> O[Manual Review]
-
-  H --> P[Score & Explainability]
-  K --> P
-  N --> P
-  O --> P
-
-  P --> Q[Officer Dashboard / Notifications]
-  Q --> R[Approve / Reject / Manual Review]
+flowchart TD
+    %% Applicant Journey
+    A[Step 1: Beneficiary submits Loan Application]
+    
+    %% Backend Orchestrator
+    B[Step 2: Backend Orchestrator starts verification]
+    
+    %% Verification Layer
+    C[Step 3: Repayment History Analysis]
+    D[Step 4: Income Verification]
+    E{Mismatch more than 10 percent?}
+    
+    %% Branch 1 - Stable Income
+    F1[Stable Income Earner -> Manual Review]
+    
+    %% Branch 2 - Informal Income
+    F2[Seasonal Income Earner -> Proxy Evaluation: Mobile, Electricity, Utilities]
+    
+    %% Features for ML
+    G[Step 5: Feature Vector Assembly]
+    
+    %% ML Scoring
+    H[Step 6: ML Scoring Service]
+    I[Step 7: Composite Credit Score 0 to 100]
+    
+    %% Risk Classification
+    J{Step 8: Risk Band Classification}
+    K1[Score >= 80 -> Auto Approve]
+    K2[Score 60 to 79 -> Manual Officer Review]
+    K3[Score < 60 -> Reject]
+    
+    %% Outputs
+    L[Step 9: Officer Dashboard]
+    M[Step 10: Admin Dashboard]
+    N[Step 11: Applicant Notification]
+    
+    %% Connections
+    A --> B --> C --> D --> E
+    E -- No --> G
+    E -- Yes --> F1
+    E -- Yes --> F2
+    F2 --> G
+    G --> H --> I --> J
+    J --> K1 --> L
+    J --> K2 --> L
+    J --> K3 --> L
+    L --> M
+    L --> N
