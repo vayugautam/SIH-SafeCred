@@ -1,42 +1,42 @@
 flowchart TD
     %% Applicant Journey
-    A[Step 1: Beneficiary submits Loan Application - Loan Amount, Tenure, Declared Income, Documents, Bank Statement]
+    A[Step 1: Beneficiary submits Loan Application]
     
     %% Backend Orchestrator
-    B[Step 2: Backend Orchestrator - Collects data, stores files, starts verification pipeline]
+    B[Step 2: Backend Orchestrator starts verification]
     
     %% Verification Layer
-    C[Step 3: Repayment History Analysis - Check past loan repayments]
-    D[Step 4: Income Verification - Compare Declared vs Bank Inflows]
-    E{Mismatch > 10% ?}
+    C[Step 3: Repayment History Analysis]
+    D[Step 4: Income Verification]
+    E{Mismatch more than 10 percent?}
     
     %% Branch 1 - Stable Income
-    F1[Stable/Fix Income Earner → Flag for Manual Review]
+    F1[Stable Income Earner -> Manual Review]
     
     %% Branch 2 - Informal Income
-    F2[Seasonal/Informal Earner → Use Alternative Proxies: Mobile Recharges, Electricity, Utilities]
+    F2[Seasonal Income Earner -> Proxy Evaluation: Mobile, Electricity, Utilities]
     
     %% Features for ML
-    G[Step 5: Feature Vector Assembly - Repayment Score, Income/Proxy Score, Repeat Borrower Flag]
+    G[Step 5: Feature Vector Assembly]
     
     %% ML Scoring
-    H[Step 6: ML Scoring Service (FastAPI) - Logistic Regression / LightGBM]
-    I[Step 7: Composite Credit Score (0–100)]
+    H[Step 6: ML Scoring Service]
+    I[Step 7: Composite Credit Score 0 to 100]
     
     %% Risk Classification
     J{Step 8: Risk Band Classification}
-    K1[Score ≥ 80 → Auto-Approve]
-    K2[Score 60–79 → Manual Officer Review]
-    K3[Score < 60 → Reject]
+    K1[Score >= 80 -> Auto Approve]
+    K2[Score 60 to 79 -> Manual Officer Review]
+    K3[Score < 60 -> Reject]
     
     %% Outputs
-    L[Step 9: Officer Dashboard - Details, Score, Explainability]
-    M[Step 10: Admin Dashboard - Fraud %, Risk %, Approvals]
-    N[Step 11: Applicant Notified - Status Update]
+    L[Step 9: Officer Dashboard]
+    M[Step 10: Admin Dashboard]
+    N[Step 11: Applicant Notification]
     
     %% Connections
     A --> B --> C --> D --> E
-    E -- No (≤10%) --> G
+    E -- No --> G
     E -- Yes --> F1
     E -- Yes --> F2
     F2 --> G
