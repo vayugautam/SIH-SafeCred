@@ -159,12 +159,11 @@ Return decision (200-500ms)
 
 **Risk Bands & Offers:**
 
-| Risk Band | SCI Score | Base Offer | Interest Rate | Status |
-|-----------|-----------|------------|---------------|---------|
-| Low Risk | 80-100 | ₹20,000 | 8.5% | Auto-approved |
-| Medium Risk | 60-79 | ₹12,000 | 10.5% | Manual review |
-| High Risk | 40-59 | ₹6,000 | 12.5% | Manual review |
-| Reject | 0-39 | ₹0 | - | Rejected |
+| Risk Band | SCI Score | Base Offer | Status |
+|-----------|-----------|------------|---------|
+| Low Risk | 80-100 | ₹20,000 | Auto-approved |
+| Medium Risk | 60-79 | ₹12,000 | Manual review |
+| High Risk | 0-59 | ₹6,000 | Rejected |
 
 **Consent Bonuses:**
 - Each consent (recharge/electricity/education): +₹1,000 to ₹3,000
@@ -183,7 +182,7 @@ Request:
 ```json
 {
   "name": "Vayu",
-  "mobile": "9956189165",
+  "mobile": "XXXXX XXXXX",
   "email": "vayu@example.com"
 }
 ```
@@ -192,7 +191,7 @@ Response:
 {
   "id": "user_abc123",
   "name": "Vayu",
-  "mobile": "9956189165"
+  "mobile": "XXXXXXXXXX"
 }
 ```
 
@@ -332,34 +331,6 @@ curl -X POST http://localhost:8001/apply \
 
 ---
 
-## 🎯 Current Status & Roadmap
-
-### ✅ Completed
-- [x] ML model training pipeline
-- [x] Feature extraction from multiple data sources
-- [x] Composite scoring algorithm
-- [x] **Real-time application processing API** ⭐ NEW
-- [x] **Demo HTML frontend** ⭐ NEW
-- [x] **Automated test suite** ⭐ NEW
-- [x] **Complete API documentation** ⭐ NEW
-- [x] Phase 0 backend (Node.js)
-- [x] Phase 0 frontend (React)
-
-### 🚧 In Progress
-- [ ] Frontend integration with ML API
-- [ ] Email/SMS notifications
-- [ ] Loan officer dashboard
-- [ ] Document processing pipeline
-
-### 📅 Upcoming
-- [ ] Production database integration (PostgreSQL/MongoDB)
-- [ ] Authentication & authorization (JWT)
-- [ ] Cloud deployment (AWS/GCP/Azure)
-- [ ] Monitoring & analytics dashboard
-- [ ] Model retraining pipeline
-
----
-
 ## 👨‍💻 Team
 
 - **Divya Ratna Gautam (Lead, AI/ML)** — ML model, API development, system architecture, integration
@@ -469,7 +440,7 @@ For questions or issues:
 
 ---
 
-**Built with ❤️ for Smart India Hackathon 2024**
+**Built with ❤️ for Smart India Hackathon 2025**
 
 **Last Updated:** October 14, 2025
 
