@@ -1,0 +1,329 @@
+// This is your Prisma schema file for SafeCred
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_DIRECT")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  LOAN_OFFICER
+}
+
+enum ApplicationStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+  MANUAL_REVIEW
+  DISBURSED
+  COMPLETED
+}
+
+enum RiskBand {
+  LOW_RISK
+  MEDIUM_RISK
+  HIGH_RISK
+  REJECT
+}
+
+model User {
+  id                        String                @id @default(uuid())
+  email                     String                @unique
+  mobile                    String                @unique
+  password                  String
+  name                      String
+  role                      UserRole              @default(USER)
+  
+  // Beneficiary Profile
+  age                       Int?
+  hasChildren               Boolean               @default(false)
+  isSociallyDisadvantaged   Boolean               @default(false)
+  address                   String?
+  state                     String?
+  district                  String?
+  pincode                   String?
+  
+  // Account Status
+  isActive                  Boolean               @default(true)
+  isVerified                Boolean               @default(false)
+  emailVerified             DateTime?
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  lastLogin                 DateTime?
+  
+  // Relations
+  applications              Application[]
+  notifications             Notification[]
+  
+  @@map("users")
+  @@index([email])
+  @@index([mobile])
+  @@index([role])
+}
+
+model Application {
+  id                        String                @id @default(uuid())
+  applicationId             String                @unique @default(cuid())
+  userId                    String
+  
+  // Loan Details
+  declaredIncome            Float
+  loanAmount                Float
+  tenureMonths              Int
+  purpose                   String?
+  
+  // Consents - Critical for data collection
+  consentRecharge           Boolean               @default(false)
+  consentElectricity        Boolean               @default(false)
+  consentEducation          Boolean               @default(false)
+  consentBankStatement      Boolean               @default(false)
+  
+  // Application Status
+  status                    ApplicationStatus     @default(PENDING)
+  
+  // ML Results from Python API
+  mlProbability             Float?                // Probability of default (0-1)
+  compositeScore            Float?                // Composite score from various factors
+  finalSci                  Float?                // Final SafeCred Index (0-100)
+  riskBand                  RiskBand?
+  
+  // Loan Offer Details
+  approvedLoanAmount        Float?
+  processingFee             Float?
+  emi                       Float?
+  
+  // Decision Details
+  decisionMessage           String?
+  rejectionReason           String?
+  approvedBy                String?               // Admin/Loan Officer who approved
+  reviewNotes               String?
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  submittedAt               DateTime?
+  processedAt               DateTime?
+  approvedAt                DateTime?
+  rejectedAt                DateTime?
+  disbursedAt               DateTime?
+  
+  // Relations
+  user                      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankStatements            BankStatement[]
+  rechargeData              RechargeData[]
+  electricityBills          ElectricityBill[]
+  educationFees             EducationFee[]
+  repaymentHistory          RepaymentHistory[]
+  documents                 Document[]
+  
+  @@map("applications")
+  @@index([userId])
+  @@index([status])
+  @@index([riskBand])
+  @@index([createdAt])
+  @@index([applicationId])
+}
+
+model BankStatement {
+  id                        String                @id @default(uuid())
+  applicationId             String
+  
+  // Transaction Details
+  date                      DateTime
+  description               String
+  debit                     Float                 @default(0)
+  credit                    Float                 @default(0)
+  balance                   Float
+  category                  String?               // Auto-categorized: salary, bill, etc.
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  
+  application               Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("bank_statements")
+  @@index([applicationId])
+  @@index([date])
+}
+
+model RechargeData {
+  id                        String                @id @default(uuid())
+  applicationId             String
+  
+  // Recharge Details
+  date                      DateTime
+  amount                    Float
+  operator                  String
+  planType                  String?               // Prepaid/Postpaid
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  
+  application               Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("recharge_data")
+  @@index([applicationId])
+  @@index([date])
+}
+
+model ElectricityBill {
+  id                        String                @id @default(uuid())
+  applicationId             String
+  
+  // Bill Details
+  month                     String                // Format: YYYY-MM
+  billDate                  DateTime
+  dueDate                   DateTime
+  amount                    Float
+  unitsConsumed             Float
+  paidDate                  DateTime?
+  isPaid                    Boolean               @default(false)
+  isLate                    Boolean               @default(false)
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  
+  application               Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("electricity_bills")
+  @@index([applicationId])
+  @@index([month])
+}
+
+model EducationFee {
+  id                        String                @id @default(uuid())
+  applicationId             String
+  
+  // Education Fee Details
+  academicYear              String                // e.g., "2024-25"
+  term                      String?               // Term/Semester
+  amount                    Float
+  dueDate                   DateTime
+  paidDate                  DateTime?
+  isPaid                    Boolean               @default(false)
+  isLate                    Boolean               @default(false)
+  institutionName           String?
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  
+  application               Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("education_fees")
+  @@index([applicationId])
+  @@index([academicYear])
+}
+
+model RepaymentHistory {
+  id                        String                @id @default(uuid())
+  applicationId             String
+  
+  // Repayment Details
+  emiNumber                 Int                   // EMI sequence number
+  emiAmount                 Float
+  dueDate                   DateTime
+  paidDate                  DateTime?
+  paidAmount                Float?
+  isPaid                    Boolean               @default(false)
+  isLate                    Boolean               @default(false)
+  daysLate                  Int                   @default(0)
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime              @updatedAt
+  
+  application               Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("repayment_history")
+  @@index([applicationId])
+  @@index([dueDate])
+}
+
+model Document {
+  id                        String                @id @default(uuid())
+  applicationId             String
+  
+  // Document Details
+  type                      String                // id_proof, address_proof, income_proof, bank_statement, etc.
+  fileName                  String
+  fileUrl                   String
+  fileSize                  Int
+  mimeType                  String
+  
+  // Verification Status
+  isVerified                Boolean               @default(false)
+  verifiedBy                String?
+  verifiedAt                DateTime?
+  verificationNotes         String?
+  
+  // Metadata
+  uploadedAt                DateTime              @default(now())
+  
+  application               Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("documents")
+  @@index([applicationId])
+  @@index([type])
+}
+
+model Notification {
+  id                        String                @id @default(uuid())
+  userId                    String
+  
+  // Notification Details
+  title                     String
+  message                   String
+  type                      String                // info, success, warning, error
+  link                      String?
+  
+  // Status
+  isRead                    Boolean               @default(false)
+  readAt                    DateTime?
+  
+  // Metadata
+  createdAt                 DateTime              @default(now())
+  
+  user                      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model SystemConfig {
+  id                        String                @id @default(uuid())
+  key                       String                @unique
+  value                     String
+  description               String?
+  updatedAt                 DateTime              @updatedAt
+  
+  @@map("system_config")
+}
+
+model AuditLog {
+  id                        String                @id @default(uuid())
+  userId                    String?
+  action                    String                // login, logout, application_submitted, application_approved, etc.
+  entity                    String?               // User, Application, etc.
+  entityId                  String?
+  details                   String?               // JSON string with additional details
+  ipAddress                 String?
+  userAgent                 String?
+  createdAt                 DateTime              @default(now())
+  
+  @@map("audit_logs")
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

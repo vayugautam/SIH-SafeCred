@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                       String        @id @default(uuid())
+  email                    String        @unique
+  mobile                   String        @unique
+  password                 String
+  name                     String
+  age                      Int?
+  hasChildren              Boolean       @default(false)
+  isSociallyDisadvantaged  Boolean       @default(false)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  
+  applications             Application[]
+  
+  @@map("users")
+}
+
+model Application {
+  id                  String              @id @default(uuid())
+  applicationId       String              @unique
+  userId              String
+  
+  // Loan Details
+  declaredIncome      Float
+  loanAmount          Float
+  tenureMonths        Int
+  purpose             String?
+  
+  // Consents
+  consentRecharge     Boolean             @default(false)
+  consentElectricity  Boolean             @default(false)
+  consentEducation    Boolean             @default(false)
+  
+  // Application Status
+  status              ApplicationStatus   @default(PENDING)
+  
+  // ML Results
+  mlProbability       Float?
+  compositeScore      Float?
+  finalSci            Float?
+  riskBand            String?
+  needCategory        String?
+  loanOffer           Float?
+  scoreDetails        Json?
+  interestRate        Float?
+  decisionMessage     String?
+  
+  // Metadata
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  processedAt         DateTime?
+  
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankStatements      BankStatement[]
+  rechargeData        RechargeData[]
+  electricityBills    ElectricityBill[]
+  educationFees       EducationFee[]
+  
+  @@map("applications")
+}
+
+model BankStatement {
+  id              String      @id @default(uuid())
+  applicationId   String
+  date            DateTime
+  description     String
+  debit           Float       @default(0)
+  credit          Float       @default(0)
+  balance         Float
+  createdAt       DateTime    @default(now())
+  
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("bank_statements")
+}
+
+model RechargeData {
+  id              String      @id @default(uuid())
+  applicationId   String
+  date            DateTime
+  amount          Float
+  operator        String
+  createdAt       DateTime    @default(now())
+  
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("recharge_data")
+}
+
+model ElectricityBill {
+  id              String      @id @default(uuid())
+  applicationId   String
+  month           String
+  amount          Float
+  units           Float
+  paidOnTime      Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("electricity_bills")
+}
+
+model EducationFee {
+  id              String      @id @default(uuid())
+  applicationId   String
+  month           String
+  amount          Float
+  institution     String
+  paidOnTime      Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  @@map("education_fees")
+}
+
+enum ApplicationStatus {
+  PENDING
+  PROCESSING
+  APPROVED
+  REJECTED
+  MANUAL_REVIEW
+  DISBURSED      // Legacy status - keeping for existing data
+  COMPLETED      // Legacy status - keeping for existing data
+}

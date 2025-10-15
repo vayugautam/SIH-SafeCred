@@ -199,6 +199,14 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
     # Incorporate loan-to-income into financial pillar
     financial_sub = 0.7 * financial_sub + 0.3 * loan_to_income_score
 
+    # 🌟 EXCELLENT REPAYMENT HISTORY BONUS
+    # If user has 3+ previous loans AND 95%+ on-time ratio, give significant bonus
+    excellent_history_bonus = 0.0
+    if prev_loans >= 3 and ontime_score >= 0.95:
+        excellent_history_bonus = 0.10  # 10% bonus for proven excellent borrowers
+        # Boost repayment score for these proven borrowers
+        repayment_sub = min(1.0, repayment_sub + 0.15)  # Add 15% to repayment pillar
+    
     # --- Return all breakdowns ---
     return {
         "financial": _clip01(financial_sub),
@@ -213,6 +221,7 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
         "loan_to_income_ratio": round(loan_to_income_ratio, 3),  # 🆕 For transparency
         "fraud_risk_penalty": fraud_risk_penalty,  # 🆕 Anti-fraud adjustment
         "fair_lending_bonus": fair_lending_bonus if 'fair_lending_bonus' in locals() else 0.0,  # 🆕 Fair lending bonus
+        "excellent_history_bonus": excellent_history_bonus,  # 🌟 NEW: Reward for proven borrowers
         "components": {
             "income_score": income_score,
             "stability_score": stability_score,
@@ -272,12 +281,13 @@ def compute_composite_score(features: Dict,
     # 🆕 APPLY ADJUSTMENTS
     fraud_penalty = subs.get("fraud_risk_penalty", 0.0)
     fair_bonus = subs.get("fair_lending_bonus", 0.0)
+    excellent_history_bonus = subs.get("excellent_history_bonus", 0.0)
     
     # Apply penalty (multiplicative - reduces score)
     final_01 = final_01 * (1.0 - fraud_penalty)
     
-    # Apply bonus (additive - but capped at 1.0)
-    final_01 = min(1.0, final_01 + fair_bonus)
+    # Apply bonuses (additive - but capped at 1.0)
+    final_01 = min(1.0, final_01 + fair_bonus + excellent_history_bonus)
     
     composite_score = round(final_01 * 100.0, 2)
 
@@ -294,6 +304,7 @@ def compute_composite_score(features: Dict,
         "loan_to_income_ratio": subs.get("loan_to_income_ratio", 0),  # 🆕 Risk indicator
         "fraud_risk_penalty": fraud_penalty,  # 🆕 Anti-fraud adjustment
         "fair_lending_bonus": fair_bonus,  # 🆕 Fair lending bonus
+        "excellent_history_bonus": excellent_history_bonus,  # 🌟 NEW: Reward for proven borrowers
         "is_new_user": subs.get("is_new_user", False),
         "has_bank_data": subs.get("has_bank_data", False),
         "income_barrier": subs.get("income_barrier_used", 15000),
