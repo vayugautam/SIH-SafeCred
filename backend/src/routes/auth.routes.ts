@@ -9,7 +9,7 @@ router.post(
   '/register',
   [
     body('email').isEmail().normalizeEmail(),
-    body('mobile').isMobilePhone('en-IN'),
+    body('mobile').isLength({ min: 10, max: 15 }).matches(/^[0-9+\-\s()]+$/),
     body('password').isLength({ min: 6 }),
     body('name').trim().notEmpty(),
     body('age').optional().isInt({ min: 18, max: 100 }),
