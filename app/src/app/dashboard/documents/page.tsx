@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -25,16 +25,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [documents, setDocuments] = useState<Record<string, UploadedFile[]>>({})
 
-  useEffect(() => {
-    if (!token || !user) {
-      router.push('/login')
-      return
-    }
-
-    loadDocuments()
-  }, [token, user, router])
-
-  const loadDocuments = async () => {
+  const loadDocuments = useCallback(async () => {
     try {
       const response = await fetch('/api/documents', {
         headers: {
@@ -61,7 +52,16 @@ export default function DocumentsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
+
+  useEffect(() => {
+    if (!token || !user) {
+      router.push('/login')
+      return
+    }
+
+    loadDocuments()
+  }, [token, user, router, loadDocuments])
 
   const handleUploadComplete = (documentType: string, file: UploadedFile) => {
     setDocuments(prev => ({

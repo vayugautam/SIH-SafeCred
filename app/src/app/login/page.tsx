@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signIn } from 'next-auth/react'
+import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -37,8 +37,15 @@ export default function LoginPage() {
         return
       }
 
-      // Redirect based on user role (will be set in session)
-      router.push('/dashboard')
+      const session = await getSession()
+      const role = session?.user?.role
+
+      if (role === 'ADMIN' || role === 'LOAN_OFFICER') {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
+      }
+
       router.refresh()
     } catch (error) {
       setError('Something went wrong. Please try again.')
@@ -117,7 +124,7 @@ export default function LoginPage() {
               </Button>
 
               <div className="text-center text-sm text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/register" className="text-blue-600 hover:underline font-medium">
                   Register now
                 </Link>

@@ -20,3 +20,19 @@ export function formatDate(date: Date | string): string {
     day: 'numeric',
   }).format(new Date(date))
 }
+
+export function formatPercent(value: number | null | undefined, fractionDigits = 0): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return '—'
+  }
+
+  const percentage = value > 1 ? value : value * 100
+  return `${percentage.toFixed(fractionDigits)}%`
+}
+
+export function formatNumber(value: number | null | undefined, fractionDigits = 2): string {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return '—'
+  }
+  return Number(value).toFixed(fractionDigits)
+}

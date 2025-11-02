@@ -13,6 +13,7 @@ model User {
   mobile                   String        @unique
   password                 String
   name                     String
+  role                     String        @default("borrower")
   age                      Int?
   hasChildren              Boolean       @default(false)
   isSociallyDisadvantaged  Boolean       @default(false)
