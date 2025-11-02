@@ -10,10 +10,13 @@ export const register = async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      console.log('Validation errors:', errors.array());
+      return res.status(400).json({ error: 'Validation failed', details: errors.array() });
     }
 
-    const { email, mobile, password, name, age, hasChildren, isSociallyDisadvantaged } = req.body;
+    const { email, mobile, password, name, age, hasChildren, isSociallyDisadvantaged, role } = req.body;
+
+    console.log('Registration attempt:', { email, mobile, name, age, role });
 
     // Check if user exists
     const existingUser = await prisma.user.findFirst({
@@ -23,6 +26,7 @@ export const register = async (req: Request, res: Response) => {
     });
 
     if (existingUser) {
+      console.log('User already exists:', existingUser.email);
       return res.status(400).json({ error: 'User with this email or mobile already exists' });
     }
 
@@ -36,15 +40,17 @@ export const register = async (req: Request, res: Response) => {
         mobile,
         password: hashedPassword,
         name,
-        age: age || null,
-        hasChildren: hasChildren || false,
-        isSociallyDisadvantaged: isSociallyDisadvantaged || false
+        role: role || 'borrower',
+        age: age ? parseInt(age.toString()) : null,
+        hasChildren: hasChildren === true || hasChildren === 'true',
+        isSociallyDisadvantaged: isSociallyDisadvantaged === true || isSociallyDisadvantaged === 'true'
       },
       select: {
         id: true,
         email: true,
         mobile: true,
         name: true,
+        role: true,
         age: true,
         hasChildren: true,
         isSociallyDisadvantaged: true,
@@ -52,10 +58,13 @@ export const register = async (req: Request, res: Response) => {
       }
     });
 
+    console.log('User created successfully:', user.id);
+
     // Generate JWT
     const token = jwt.sign(
-      { userId: user.id },
-      (process.env.JWT_SECRET || 'default-secret-key') as jwt.Secret
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'default-secret-key',
+      { expiresIn: process.env.JWT_EXPIRE || '7d' } as jwt.SignOptions
     );
 
     res.status(201).json({
@@ -64,8 +73,8 @@ export const register = async (req: Request, res: Response) => {
       token
     });
   } catch (error: any) {
-    console.error('Register error:', error);
-    res.status(500).json({ error: 'Failed to register user' });
+    console.error('Register error details:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to register user', message: error.message });
   }
 };
 
