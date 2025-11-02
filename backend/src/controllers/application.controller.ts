@@ -304,9 +304,9 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
 
     const bankStatementSummary = application.bankStatements.length > 0
       ? (() => {
-          const totalCredits = application.bankStatements.reduce((sum, stmt: any) => sum + Number(stmt.credit ?? 0), 0);
-          const totalDebits = application.bankStatements.reduce((sum, stmt: any) => sum + Number(stmt.debit ?? 0), 0);
-          const avgBalance = application.bankStatements.reduce((sum, stmt: any) => sum + Number(stmt.balance ?? 0), 0) /
+          const totalCredits = application.bankStatements.reduce((sum: number, stmt: any) => sum + Number(stmt.credit ?? 0), 0);
+          const totalDebits = application.bankStatements.reduce((sum: number, stmt: any) => sum + Number(stmt.debit ?? 0), 0);
+          const avgBalance = application.bankStatements.reduce((sum: number, stmt: any) => sum + Number(stmt.balance ?? 0), 0) /
             application.bankStatements.length;
           const monthsTracked = new Set(
             application.bankStatements.map((stmt: any) => stmt.date.toISOString().substring(0, 7))
@@ -332,7 +332,7 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
 
     const rechargeSummary = application.rechargeData.length > 0
       ? (() => {
-          const totalAmount = application.rechargeData.reduce((sum, rd: any) => sum + Number(rd.amount ?? 0), 0);
+          const totalAmount = application.rechargeData.reduce((sum: number, rd: any) => sum + Number(rd.amount ?? 0), 0);
           const frequency = application.rechargeData.length;
           const avgAmount = totalAmount / Math.max(1, frequency);
           return {
@@ -347,7 +347,7 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
 
     const electricitySummary = application.electricityBills.length > 0
       ? (() => {
-          const totalPaid = application.electricityBills.reduce((sum, bill: any) => sum + Number(bill.amount ?? 0), 0);
+          const totalPaid = application.electricityBills.reduce((sum: number, bill: any) => sum + Number(bill.amount ?? 0), 0);
           const frequency = application.electricityBills.length;
           const avgPayment = totalPaid / Math.max(1, frequency);
           const onTimeCount = application.electricityBills.filter((bill: any) => bill.paidOnTime).length;
@@ -364,7 +364,7 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
 
     const educationSummary = application.educationFees.length > 0
       ? (() => {
-          const totalPaid = application.educationFees.reduce((sum, fee: any) => sum + Number(fee.amount ?? 0), 0);
+          const totalPaid = application.educationFees.reduce((sum: number, fee: any) => sum + Number(fee.amount ?? 0), 0);
           const frequency = application.educationFees.length;
           const avgFee = totalPaid / Math.max(1, frequency);
           return {
@@ -542,7 +542,8 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
         url: `${process.env.ML_API_URL}/apply_direct`,
         status: mlError.response?.status,
         data: mlError.response?.data,
-        message: mlError.message
+        message: mlError.message,
+        payload: mlPayload // Log the payload that was sent
       });
       
       // Update status back to pending on ML error
@@ -554,7 +555,9 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
       return res.status(500).json({ 
         error: 'Failed to process application with ML service',
         details: mlError.message,
-        mlApiUrl: `${process.env.ML_API_URL}/apply_direct`
+        mlApiUrl: `${process.env.ML_API_URL}/apply_direct`,
+        mlErrorData: mlError.response?.data, // Include ML error response
+        mlStatus: mlError.response?.status
       });
     }
 
