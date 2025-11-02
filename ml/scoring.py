@@ -50,19 +50,47 @@ def _clip01(x: float) -> float:
         return 0.0
     return float(max(0.0, min(1.0, x)))
 
-def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
+def compute_subscores(features: Dict, caps: Optional[Dict] = None) -> Dict:
     """Compute normalized sub-scores (0..1) for pillars. Returns breakdown dict."""
     caps = caps or DEFAULT_CAPS
 
     # --- Financial Subcomponents ---
     monthly = features.get("monthly_credits")
-    income_score = _clip01((monthly or 0.0) / caps["income_cap"])
+    if monthly is None:
+        monthly = features.get("bank_monthly_credits")
+
+    declared_income = features.get("declared_income", 0.0)
+    income_baseline = monthly or declared_income
+    income_score = _clip01((income_baseline or 0.0) / caps["income_cap"])
 
     salary_std = features.get("salary_std")
+    if salary_std is None:
+        salary_std = features.get("bank_salary_std")
     stability_score = 1.0 - _clip01((salary_std or 0.0) / caps["std_cap"])
 
     avg_balance = features.get("avg_balance")
+    if avg_balance is None:
+        avg_balance = features.get("bank_avg_balance")
     balance_score = _clip01((avg_balance or 0.0) / caps["balance_cap"])
+
+    consent_flags = [
+        features.get("consent_recharge"),
+        features.get("consent_electricity"),
+        features.get("consent_education"),
+        features.get("consent_bank"),
+        features.get("consent_bank_statement"),
+    ]
+    consent_values = [flag for flag in consent_flags if flag is not None]
+    consent_depth = (
+        sum(1 for flag in consent_values if bool(flag)) / len(consent_values)
+        if consent_values
+        else 0.0
+    )
+
+    fair_lending_bonus = 0.0
+    fraud_risk_penalty = 0.0
+    affluence_penalty = 0.0
+    income_volatility_relief = 0.0
 
     # --- Detect newcomer (no previous loans) ---
     prev_loans = features.get("previous_loans_count", 0)
@@ -110,17 +138,30 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
 
     # --- Adjust pillar weights based on income & data availability ---
     # 🎯 ENHANCED LOGIC: Different evaluation strategies for different income groups
-    
-    has_bank_data = bool(features.get("monthly_credits") and features.get("avg_balance"))
-    income = features.get("monthly_credits") or features.get("declared_income", 0)
+
+    has_bank_data = bool(monthly and avg_balance)
+    income = income_baseline or 0.0
     loan_amount = features.get("loan_amount", 0)
-    
+
     # Calculate loan-to-income ratio (important for all users)
     loan_to_income_ratio = _safe_div(loan_amount, income, default=0.0) if income > 0 else 0.0
-    
+
+    # Provide relief for low-income applicants with irregular cashflows
+    if income > 0 and income < barrier:
+        stability_floor = 0.6
+        balance_floor = 0.5
+        if stability_score < stability_floor:
+            income_volatility_relief += stability_floor - stability_score
+            stability_score = stability_floor
+        if balance_score < balance_floor:
+            income_volatility_relief += balance_floor - balance_score
+            balance_score = balance_floor
+        income_volatility_relief = min(1.0, income_volatility_relief)
+
     # Determine user segment
     user_segment = "unknown"
-    
+    pillar_weights_local = dict(PILLAR_WEIGHTS)
+
     if not has_bank_data:
         # 🆕 NEW USERS / NO BANK DATA
         # Strategy: Heavy reliance on alternative proxies + anti-fraud checks
@@ -131,56 +172,95 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
             "consumption": 0.50,    # 🔥 HIGH weight on alternative proxies
             "history": 0.25         # Check for any previous loan patterns
         }
-        
+
         # 🚨 ANTI-FRAUD: New users get penalty if loan amount is too high relative to income
         if loan_to_income_ratio > 0.5:  # Asking for >50% of monthly income
             fraud_risk_penalty = 0.20  # 20% penalty on composite score
-        else:
-            fraud_risk_penalty = 0.0
-            
+
     elif income < barrier:
         # 🏚️ POOR / LOW-INCOME USERS (Below barrier, e.g., <₹15K/month)
         # Strategy: Evaluate through ALTERNATIVE PROXIES + Loan-to-Income Ratio
         user_segment = "low_income_alternative_proxies"
         pillar_weights_local = {
-            "financial": 0.20,      # Basic income stability check
-            "repayment": 0.20,      # Some repayment history if available
-            "consumption": 0.45,    # 🔥 HIGH weight on alternative proxies (recharge, electricity, education)
-            "history": 0.15         # Previous loan behavior
+            "financial": 0.20,
+            "repayment": 0.20,
+            "consumption": 0.45,
+            "history": 0.15
         }
-        fraud_risk_penalty = 0.0
-        
-        # ✅ FAIR LENDING: If loan-to-income is reasonable (<30%), give bonus
+
         if loan_to_income_ratio < 0.3:
-            fair_lending_bonus = 0.05  # 5% bonus
-        else:
-            fair_lending_bonus = 0.0
-            
+            fair_lending_bonus += 0.05  # Encourage right-sized borrowing
+        if consent_depth >= 0.5:
+            fair_lending_bonus += 0.03  # Reward data-sharing for underserved users
+
     else:
-        # 💰 RICH / HIGH-INCOME USERS (Above barrier, e.g., ≥₹15K/month)
-        # Strategy: Evaluate through REPAYMENT HISTORY + Loan-to-Income Ratio
-        user_segment = "high_income_repayment_focused"
-        pillar_weights_local = {
-            "financial": 0.35,      # Income and stability matter
-            "repayment": 0.50,      # 🔥 HIGH weight on repayment history
-            "consumption": 0.05,    # Minimal weight on proxies (they can afford these)
-            "history": 0.10         # Past loan performance
-        }
-        fraud_risk_penalty = 0.0
-        fair_lending_bonus = 0.0
+        # 💰 HIGH-INCOME USERS (Above barrier, e.g., ≥₹15K/month)
+        # Strategy: STRICT REPAYMENT HISTORY ONLY - NO alternative proxies to prevent misuse
+        user_segment = "high_income_repayment_only"
         
-        # ✅ RESPONSIBLE LENDING: Penalty if asking for too much
-        if loan_to_income_ratio > 1.0:  # Asking for more than monthly income
-            fraud_risk_penalty = 0.15  # 15% penalty
+        # 🚨 CRITICAL: High-income users CANNOT use alternative proxies
+        # They must have verifiable repayment history OR will be manually reviewed
+        
+        if is_new_user or prev_loans < 2:
+            # High-income user with NO repayment history
+            # Flag for mandatory manual review - cannot rely on proxies
+            user_segment = "high_income_no_history_manual_review"
+            pillar_weights_local = {
+                "financial": 0.60,      # Income verification only
+                "repayment": 0.00,      # No history available
+                "consumption": 0.00,    # 🚫 BLOCKED - prevent proxy misuse
+                "history": 0.40         # General creditworthiness check
+            }
+            # Auto-flag for manual review
+            fraud_risk_penalty = 0.25  # Heavy penalty forces manual review
+        else:
+            # High-income user WITH repayment history
+            # Evaluate ONLY on proven repayment track record
+            pillar_weights_local = {
+                "financial": 0.30,      # Basic income verification
+                "repayment": 0.60,      # 🔥 PRIMARY: Proven repayment behavior
+                "consumption": 0.00,    # 🚫 BLOCKED - no alternative proxies
+                "history": 0.10         # Historical loan performance
+            }
+        
+        # Stricter loan-to-income enforcement for high earners
+        if loan_to_income_ratio > 0.8:  # Asking for >80% of monthly income
+            fraud_risk_penalty += 0.20
+        elif loan_to_income_ratio > 1.0:  # Asking for more than monthly income
+            fraud_risk_penalty += 0.30  # Severe penalty - likely fraud
+
+    if not has_bank_data and consent_depth >= 0.5:
+        fair_lending_bonus += 0.02
+
+    if consent_depth >= 0.75 and fraud_risk_penalty > 0:
+        fraud_risk_penalty = max(0.0, fraud_risk_penalty - 0.05)
+
+    if income >= barrier * 2:
+        if consent_depth < 0.5:
+            affluence_penalty += min(0.2, 0.1 + (0.5 - consent_depth) * 0.3)
+        lifestyle_signal = features.get("lifestyle_index", 0.0)
+        if lifestyle_signal and lifestyle_signal > 0.75 and loan_to_income_ratio > 0.4:
+            affluence_penalty += 0.05
+
+    fraud_risk_penalty = min(0.35, max(0.0, fraud_risk_penalty + affluence_penalty))
 
     # --- Pillar-level scores ---
     financial_sub = (0.5 * income_score + 0.3 * stability_score + 0.2 * balance_score)
     repayment_sub = 0.5 * ontime_score + 0.5 * delay_score
-    consumption_sub = (
-        0.4 * elec_consistency_score +
-        0.3 * recharge_score +
-        0.3 * education_score
-    ) if pillar_weights_local.get("consumption", 0) > 0 else 0.0
+    
+    # 🚨 CRITICAL: Consumption pillar ONLY available if weights allow it
+    # High-income users have consumption weight = 0.0 to prevent proxy misuse
+    consumption_weight = pillar_weights_local.get("consumption", 0)
+    if consumption_weight > 0:
+        consumption_sub = (
+            0.4 * elec_consistency_score +
+            0.3 * recharge_score +
+            0.3 * education_score
+        )
+    else:
+        # Consumption pillar disabled - set to neutral to avoid unfair penalty
+        consumption_sub = 0.5  # Neutral score when blocked
+    
     history_sub = history_score
     
     # 🆕 LOAN-TO-INCOME SCORE (Important for all users)
@@ -207,6 +287,13 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
         # Boost repayment score for these proven borrowers
         repayment_sub = min(1.0, repayment_sub + 0.15)  # Add 15% to repayment pillar
     
+    # 🆕 HIGH-INCOME NO-HISTORY PENALTY
+    # If high-income user lacks repayment history, they MUST go through manual review
+    no_history_manual_flag = False
+    if user_segment == "high_income_no_history_manual_review":
+        no_history_manual_flag = True
+        # Additional notes will be added to breakdown for loan officers
+    
     # --- Return all breakdowns ---
     return {
         "financial": _clip01(financial_sub),
@@ -220,8 +307,13 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
         "user_segment": user_segment,  # 🆕 Track which strategy was used
         "loan_to_income_ratio": round(loan_to_income_ratio, 3),  # 🆕 For transparency
         "fraud_risk_penalty": fraud_risk_penalty,  # 🆕 Anti-fraud adjustment
-        "fair_lending_bonus": fair_lending_bonus if 'fair_lending_bonus' in locals() else 0.0,  # 🆕 Fair lending bonus
-        "excellent_history_bonus": excellent_history_bonus,  # 🌟 NEW: Reward for proven borrowers
+        "fair_lending_bonus": fair_lending_bonus,  # 🆕 Fair lending bonus
+        "excellent_history_bonus": excellent_history_bonus,  # 🌟 Reward for proven borrowers
+        "income_volatility_relief": income_volatility_relief,
+        "affluence_penalty": affluence_penalty,
+        "consent_depth": consent_depth,
+        "no_history_manual_flag": no_history_manual_flag,  # 🆕 High-income no-history flag
+        "alternative_proxies_blocked": consumption_weight == 0.0,  # 🆕 Track if proxies disabled
         "components": {
             "income_score": income_score,
             "stability_score": stability_score,
@@ -234,13 +326,16 @@ def compute_subscores(features: Dict, caps: Dict = None) -> Dict:
             "edu_ontime": edu_ontime,
             "education_score": education_score,
             "history_score": history_score,
-            "loan_to_income_score": loan_to_income_score  # 🆕 New component
+            "loan_to_income_score": loan_to_income_score,
+            "consent_depth": consent_depth,
+            "income_volatility_relief": income_volatility_relief,
+            "affluence_penalty": affluence_penalty,
         }
     }
 
 def compute_composite_score(features: Dict,
-                            pillar_weights: Dict = None,
-                            caps: Dict = None) -> Tuple[float, Dict]:
+                            pillar_weights: Optional[Dict] = None,
+                            caps: Optional[Dict] = None) -> Tuple[float, Dict]:
     """
     Compute composite score (0..100) and return breakdown.
     
@@ -282,6 +377,9 @@ def compute_composite_score(features: Dict,
     fraud_penalty = subs.get("fraud_risk_penalty", 0.0)
     fair_bonus = subs.get("fair_lending_bonus", 0.0)
     excellent_history_bonus = subs.get("excellent_history_bonus", 0.0)
+    income_relief = subs.get("income_volatility_relief", 0.0)
+    affluence_penalty = subs.get("affluence_penalty", 0.0)
+    consent_depth = subs.get("consent_depth", 0.0)
     
     # Apply penalty (multiplicative - reduces score)
     final_01 = final_01 * (1.0 - fraud_penalty)
@@ -304,11 +402,16 @@ def compute_composite_score(features: Dict,
         "loan_to_income_ratio": subs.get("loan_to_income_ratio", 0),  # 🆕 Risk indicator
         "fraud_risk_penalty": fraud_penalty,  # 🆕 Anti-fraud adjustment
         "fair_lending_bonus": fair_bonus,  # 🆕 Fair lending bonus
-        "excellent_history_bonus": excellent_history_bonus,  # 🌟 NEW: Reward for proven borrowers
+        "excellent_history_bonus": excellent_history_bonus,  # 🌟 Reward for proven borrowers
         "is_new_user": subs.get("is_new_user", False),
         "has_bank_data": subs.get("has_bank_data", False),
         "income_barrier": subs.get("income_barrier_used", 15000),
-        "components": {k: float(v) for k, v in subs.get("components", {}).items()}
+        "components": {k: float(v) for k, v in subs.get("components", {}).items()},
+        "income_volatility_relief": income_relief,
+        "affluence_penalty": affluence_penalty,
+        "consent_depth": consent_depth,
+        "no_history_manual_flag": subs.get("no_history_manual_flag", False),  # 🆕 High-income no-history flag
+        "alternative_proxies_blocked": subs.get("alternative_proxies_blocked", False),  # 🆕 Track if proxies disabled
     }
     
     return composite_score, breakdown
@@ -382,7 +485,7 @@ def aggregate_loan_history_metrics(loan_history_df, user_id):
     prepaid = int(df["timely"].sum()) if "timely" in df.columns else None
     avg_prev_repayment_ratio = None
     if prepaid is not None:
-        avg_prev_repayment_ratio = _safe_div(prepaid, prev_loans, default=None)
+        avg_prev_repayment_ratio = _safe_div(prepaid, prev_loans, default=0.0)
     # time since last loan: if loan_id contains date or if there's a loan_date column
     if "loan_date" in df.columns:
         last_date = pd.to_datetime(df["loan_date"]).max()
