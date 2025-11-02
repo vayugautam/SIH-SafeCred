@@ -1,16 +1,14 @@
 """
 train_v2.py
 
-Enhanced SafeCred training script.
+Enhanced SafeCred training script with dynamic poverty barrier.
 
-✅ New features:
-- Integrates loan_history.csv (repeat borrower metrics)
-- Includes composite score computation per user
-- Saves model, scaler, and feature_order.pkl for inference alignment
-- Handles missing values gracefully
-- Prints evaluation metrics and sample scores
-
-Model: RandomForestClassifier baseline (can easily switch to LightGBM)
+✅ Improvements:
+- Derives poverty barrier dynamically using income + repayment + socio-economic data
+- Stores barrier in model_metadata.json for use by scoring & frontend
+- Auto-adjusts barrier upward for socially disadvantaged groups
+- Includes weighted percentile logic for fairness
+- Trains RandomForest baseline model
 """
 
 import os
@@ -31,6 +29,67 @@ ROOT = os.path.dirname(__file__)
 DATA_DIR = os.path.join(ROOT, "data")
 MODELS_DIR = os.path.join(ROOT, "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
+
+
+def compute_dynamic_barrier(df: pd.DataFrame) -> float:
+    """
+    Computes dynamic 'poor income barrier' based on data distribution.
+
+    Logic:
+    1️⃣ Start from 35th percentile of declared income.
+    2️⃣ Weight low-income applicants with good repayment behaviour higher.
+    3️⃣ Adjust upward slightly if dataset contains socially disadvantaged groups.
+
+    Returns a float (₹ barrier).
+    """
+    try:
+        # Defensive check
+        if "declared_income" not in df.columns or df["declared_income"].isna().all():
+            print("⚠️ No declared_income found, using default ₹15000.")
+            return 15000.0
+
+        df["declared_income"] = pd.to_numeric(df["declared_income"], errors="coerce").fillna(0)
+
+        # Weight = repayment reliability (if available)
+        if "avg_prev_repayment_ratio" in df.columns:
+            df["repay_weight"] = df["avg_prev_repayment_ratio"].fillna(0.5)
+        else:
+            df["repay_weight"] = 1.0
+
+        # Weighted percentile (35th)
+        sorted_df = df.sort_values("declared_income")
+        cumsum = (sorted_df["repay_weight"] / sorted_df["repay_weight"].sum()).cumsum()
+        cutoff_index = (cumsum - 0.35).abs().idxmin()
+        barrier_value = sorted_df.loc[cutoff_index, "declared_income"]
+        import numpy as np
+        import datetime
+        # Only allow int or float, not complex, date, timedelta, or None
+        if isinstance(barrier_value, np.generic):
+            value = barrier_value.item()
+        else:
+            value = barrier_value
+
+        if isinstance(value, (int, float, np.integer, np.floating)):
+            barrier = float(value)
+        else:
+            # fallback if value is not convertible
+            print(f"⚠️ Invalid barrier value type: {type(value)}, using default ₹15000.")
+            barrier = 15000.0
+
+        # Adjust upward slightly if many socially disadvantaged users exist
+        if "is_socially_disadvantaged" in df.columns:
+            disadvantaged_ratio = df["is_socially_disadvantaged"].mean()
+            if disadvantaged_ratio > 0.3:
+                barrier *= (1 + 0.05 * disadvantaged_ratio)  # 1–5% bump
+
+        barrier = round(barrier, -2)  # nearest ₹100
+        print(f"✅ Dynamic Income Barrier computed: ₹{barrier}")
+        return barrier
+
+    except Exception as e:
+        print(f"⚠️ Error computing dynamic barrier: {e}")
+        return 15000.0
+
 
 def train_and_save():
     # --- Step 1: Load datasets ---
@@ -59,8 +118,7 @@ def train_and_save():
     # --- Step 4: Compute composite score (behavioral) ---
     print("🧮 Computing composite scores ...")
     composite_scores = []
-    is_new_flags = []
-    has_bank_flags = []
+    is_new_flags, has_bank_flags = [], []
 
     for _, row in df.iterrows():
         feats = row.to_dict()
@@ -74,20 +132,21 @@ def train_and_save():
     df["has_bank_data"] = has_bank_flags
 
     if "suspicion_score" in df.columns:
-    	df["suspicion_score"] = df["suspicion_score"].fillna(0)
+        df["suspicion_score"] = df["suspicion_score"].fillna(0)
 
+    # --- Step 5: Compute dynamic income barrier ---
+    print("\n📈 Calculating dynamic poor-income barrier ...")
+    dynamic_barrier = compute_dynamic_barrier(df)
 
-    # --- Step 5: Prepare training data ---
+    # --- Step 6: Prepare training data ---
     print("🧠 Preparing training matrix ...")
     df.fillna(0, inplace=True)
     X = df.drop(columns=["user_id", "target"], errors="ignore")
     y = df["target"]
 
-    # numeric-only features
     X_numeric = X.select_dtypes(include=["number"])
     feature_names = list(X_numeric.columns)
 
-    # --- Step 6: Scaling ---
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_numeric)
 
@@ -99,27 +158,21 @@ def train_and_save():
     print("🚀 Training RandomForest ...")
     clf = RandomForestClassifier(
         n_estimators=250,
-        max_depth=None,
         random_state=42,
         class_weight="balanced_subsample",
         n_jobs=-1
     )
     clf.fit(X_train, y_train)
 
-        # --- Step 8: Evaluate model ---
-    print("\n📈 Evaluation:")
+    # --- Step 8: Evaluate model ---
+    print("\n📊 Evaluation:")
     preds = clf.predict(X_test)
     probs = clf.predict_proba(X_test)[:, 1]
 
     print(classification_report(y_test, preds))
     print("ROC-AUC:", round(roc_auc_score(y_test, probs), 3))
 
-    # --- Step 9: Compute dynamic income barrier (self-learning boundary) ---
-    income_values = df["declared_income"].fillna(0).values
-    dynamic_barrier = float(np.percentile(income_values, 35))  # 35th percentile = cutoff for "poor"
-    print(f"Dynamic Income Barrier (35th percentile): ₹{round(dynamic_barrier, 2)}")
-
-    # --- Step 10: Save model artifacts ---
+    # --- Step 9: Save model artifacts ---
     model_path = os.path.join(MODELS_DIR, "safecred_model.pkl")
     scaler_path = os.path.join(MODELS_DIR, "scaler.pkl")
     meta_path = os.path.join(MODELS_DIR, "model_metadata.json")
@@ -129,29 +182,33 @@ def train_and_save():
     joblib.dump(scaler, scaler_path)
     joblib.dump(feature_names, feature_path)
 
-    # ✅ Single meta dictionary with dynamic barrier included
     meta = {
-        "version": "2.0.0",
-        "model": "RandomForest",
+        "version": "2.1.0",
+        "model": "RandomForestClassifier",
         "train_time": datetime.now().isoformat(),
-        "features": feature_names,
         "n_samples": len(df),
         "n_features": len(feature_names),
-        "dynamic_income_barrier": dynamic_barrier  # 🔥 kept safely here
+        "features": feature_names,
+        "dynamic_income_barrier": dynamic_barrier,
+        "logic": {
+            "percentile_base": 35,
+            "repayment_weight": True,
+            "socio_adjustment": True
+        }
     }
 
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
 
-    print(f"\n✅ Model and artifacts saved in {MODELS_DIR}")
-    print(f"   - safecred_model.pkl")
-    print(f"   - scaler.pkl")
-    print(f"   - feature_order.pkl ({len(feature_names)} features)")
-    print(f"   - model_metadata.json (includes dynamic income barrier)")
+    print(f"\n✅ Model and metadata saved in {MODELS_DIR}")
+    print(f"   • safecred_model.pkl")
+    print(f"   • scaler.pkl")
+    print(f"   • feature_order.pkl")
+    print(f"   • model_metadata.json (includes data-driven barrier ₹{dynamic_barrier})")
 
-    # --- Step 11: Sample output ---
-    print("\n🔍 Sample scores:")
-    print(df[["user_id", "composite_score", "target"]].head())
+    # --- Step 10: Sample verification ---
+    print("\n🔍 Sample entries:")
+    print(df[["user_id", "declared_income", "composite_score", "target"]].head())
 
     return model_path, scaler_path, meta_path, feature_path
 
