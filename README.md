@@ -21,20 +21,30 @@ We now have a **complete ML-powered application processing system** that:
 
 ```
 SIH-SafeCred/
-├── ml/                          # 🤖 ML Models & API
-│   ├── application_api.py       # ⭐ NEW: Application processing API
-│   ├── demo_application.html    # ⭐ NEW: Demo frontend
-│   ├── test_application_api.py  # ⭐ NEW: Test suite
-│   ├── api_v2.py               # Original ML API
-│   ├── features.py             # Feature extraction
-│   ├── scoring.py              # Risk scoring logic
-│   └── train_v2.py             # Model training
-├── docs/
-│   ├── frontend-integration.md         # ⭐ NEW: Integration guide
-│   ├── QUICKSTART_APPLICATION_API.md   # ⭐ NEW: Quick start
-│   └── orchestration.md                # System architecture
-├── backend/                    # Node.js backend (Phase 0)
-└── frontend/                   # React frontend (Phase 0)
+├── app/                          # Next.js 14+ Frontend (Main User Interface)
+│   ├── src/app/                  # App directory (routing, pages, layouts)
+│   ├── src/components/           # UI components
+│   ├── src/lib/                  # Utility libraries
+│   ├── src/store/                # State management
+│   ├── prisma/                   # Prisma schema & migrations
+│   ├── package.json              # Frontend dependencies & scripts
+│   └── ...                       # Other Next.js config files
+├── ml/                           # 🤖 ML Models & API
+│   ├── application_api.py        # Application processing API
+│   ├── demo_application.html     # Demo frontend
+│   ├── test_application_api.py   # Test suite
+│   ├── scoring.py                # Risk scoring logic
+│   └── ...                       # Model training, feature extraction, etc.
+├── backend/                      # Node.js backend (API, legacy/Phase 0)
+│   ├── src/                      # Express server, controllers, routes
+│   ├── prisma/                   # Backend DB schema
+│   ├── package.json              # Backend dependencies & scripts
+│   └── ...
+├── docs/                         # Documentation & guides
+│   ├── frontend-integration.md   # Integration guide
+│   ├── QUICKSTART_APPLICATION_API.md
+│   └── ...
+└── infra/                        # Infrastructure configs, synthetic/test data
 ```
 
 ---
@@ -65,20 +75,20 @@ python test_application_api.py
 3. Click "Apply for Loan"
 4. Get instant decision! 🎉
 
-### Option 2: Full Stack (Phase 0)
+### Option 2: Full Stack (Recommended)
 
-#### Backend
+#### Backend (Node.js API)
 ```bash
 cd backend
 npm install
 npm run dev   # runs Express on :5000
 ```
 
-#### Frontend
+#### Frontend (Next.js 14+)
 ```bash
-cd frontend
+cd app
 npm install
-npm run dev   # runs React on :3000
+npm run dev   # runs Next.js on :3000 (or set PORT)
 ```
 
 ---
@@ -342,8 +352,7 @@ curl -X POST http://localhost:8001/apply \
 - [x] **Demo HTML frontend** ⭐ NEW
 - [x] **Automated test suite** ⭐ NEW
 - [x] **Complete API documentation** ⭐ NEW
-- [x] Phase 0 backend (Node.js)
-- [x] Phase 0 frontend (React)
+- [x] Node.js backend (API)
 
 ### 🚧 In Progress
 - [ ] Frontend integration with ML API
@@ -386,10 +395,10 @@ curl -X POST http://localhost:8001/apply \
 - **Express** - Web framework
 - **MongoDB/PostgreSQL** - Database
 
-### Frontend (Phase 0)
-- **React** - UI framework
+### Frontend
+- **Next.js 14+** - React framework (App Router)
+- **React** - UI library
 - **Tailwind CSS** - Styling
-- **Vite** - Build tool
 
 ---
 
@@ -472,5 +481,3 @@ For questions or issues:
 **Built with ❤️ for Smart India Hackathon 2024**
 
 **Last Updated:** October 14, 2025
-
-
