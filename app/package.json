@@ -4,7 +4,7 @@
   "description": "SafeCred - AI-Assisted Credit Scoring Platform with NextAuth and PostgreSQL",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3002",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -12,7 +12,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "rescore:scheduler": "tsx scripts/rescore-cron.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -41,6 +42,7 @@
     "lucide-react": "^0.316.0",
     "next": "14.1.0",
     "next-auth": "^4.24.5",
+    "node-cron": "^3.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
@@ -54,9 +56,12 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.11.5",
+    "@types/node-cron": "^3.0.11",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "autoprefixer": "^10.4.17",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.1.0",
     "postcss": "^8.4.33",
     "prisma": "^5.9.1",
     "tailwindcss": "^3.4.1",

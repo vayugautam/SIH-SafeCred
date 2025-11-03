@@ -3,17 +3,43 @@
 ## 🎯 Problem Statement
 SafeCred: AI-assisted credit scoring for concessional lending to underserved populations.
 
-**Current Status:** ✅ **Real-time Application Processing API Ready!**
+**Current Status:** ✅ **Production Ready!**
 
-### What's New? 🚀
-We now have a **complete ML-powered application processing system** that:
-- ✅ Accepts loan applications via REST API
-- 🤖 Runs ML model for instant credit assessment (200-500ms)
-- 💰 Returns loan offers with risk-based interest rates
-- 📊 Calculates composite scores from multiple data sources
-- ⚡ Processes applications in real-time
+---
 
-**[See Complete Implementation →](IMPLEMENTATION_SUMMARY.md)**
+## 🚀 Quick Start
+
+### **→ [Complete Setup & Run Guide](HOW_TO_RUN.md)** ⭐
+
+For detailed instructions on running the project, see **[HOW_TO_RUN.md](HOW_TO_RUN.md)**
+
+### Fast Start (All Services)
+```powershell
+.\RUN.ps1
+```
+
+Or use the simplified version:
+```powershell
+.\START.ps1
+```
+
+### Manual Start
+```powershell
+# Terminal 1 - ML Service (Port 8002)
+cd ml
+.\.venv\Scripts\Activate
+python application_api.py
+
+# Terminal 2 - Backend (Port 3001)
+cd backend
+npm run dev
+
+# Terminal 3 - Frontend (Port 3002)
+cd app
+npm run dev
+```
+
+**Access the application:** http://localhost:3002
 
 ---
 

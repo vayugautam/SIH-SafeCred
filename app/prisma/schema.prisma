@@ -34,6 +34,13 @@ enum RiskBand {
   REJECT
 }
 
+enum IncomeVerificationStatus {
+  PENDING
+  AUTO_VERIFIED
+  MANUAL_REVIEW
+  UNNEEDED
+}
+
 model User {
   id                        String                @id @default(uuid())
   email                     String                @unique
@@ -64,6 +71,7 @@ model User {
   // Relations
   applications              Application[]
   notifications             Notification[]
+  channelPartnerMatches     ChannelPartnerApplication[] @relation("MatchedUser")
   
   @@map("users")
   @@index([email])
@@ -96,11 +104,21 @@ model Application {
   compositeScore            Float?                // Composite score from various factors
   finalSci                  Float?                // Final SafeCred Index (0-100)
   riskBand                  RiskBand?
+  riskCategory              String?
+  needCategory              String?
+  scoreDetails              Json?
   
   // Loan Offer Details
   approvedLoanAmount        Float?
   processingFee             Float?
   emi                       Float?
+  partnerApplicationId      String?
+  partnerVerifiedIncome     Float?
+  partnerMatchConfidence    Float?
+  incomeVerificationStatus  IncomeVerificationStatus  @default(PENDING)
+  abilityToRepayIndex       Float?
+  incomeVerificationNotes   String?
+  incomeMismatchFlag        Boolean               @default(false)
   
   // Decision Details
   decisionMessage           String?
@@ -125,6 +143,7 @@ model Application {
   educationFees             EducationFee[]
   repaymentHistory          RepaymentHistory[]
   documents                 Document[]
+  channelPartnerMatches     ChannelPartnerApplication[] @relation("MatchedApplication")
   
   @@map("applications")
   @@index([userId])
@@ -132,6 +151,7 @@ model Application {
   @@index([riskBand])
   @@index([createdAt])
   @@index([applicationId])
+  @@index([incomeVerificationStatus])
 }
 
 model BankStatement {
@@ -326,4 +346,104 @@ model AuditLog {
   @@index([userId])
   @@index([action])
   @@index([createdAt])
+}
+
+model ChannelPartner {
+  id                 String                      @id @default(uuid())
+  code               String                      @unique
+  name               String
+  apiKeyHash         String?
+  contactEmail       String?
+  contactPhone       String?
+  reliabilityScore   Float?                      @default(0)
+  coverageRatio      Float?                      @default(0)
+  lastSyncAt         DateTime?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  applications       ChannelPartnerApplication[]
+
+  @@map("channel_partners")
+  @@index([lastSyncAt])
+}
+
+model ChannelPartnerApplication {
+  id                       String                     @id @default(uuid())
+  partnerId                String
+  partnerBeneficiaryId     String
+  borrowerName             String?
+  aadhaarNumber            String?
+  panNumber                String?
+  mobile                   String?
+  loanAmount               Float?
+  tenureMonths             Int?
+  interestRate             Float?
+  principalOutstanding     Float?
+  status                   String?
+  disbursedAt              DateTime?
+  closedAt                 DateTime?
+  businessCategory         String?
+  businessType             String?
+  monthlyRevenue           Float?
+  averageMonthlyRepayment  Float?
+  onTimePaymentRate        Float?
+  abilityToRepayIndex      Float?
+  verifiedIncome           Float?
+  needsReview              Boolean                   @default(false)
+  matchedUserId            String?
+  matchedApplicationId     String?
+  matchConfidence          Float?                    @default(0)
+  incomeMismatchFlag       Boolean                   @default(false)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+  lastSyncedAt             DateTime?
+
+  partner                  ChannelPartner            @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  matchedUser              User?                     @relation("MatchedUser", fields: [matchedUserId], references: [id])
+  matchedApplication       Application?              @relation("MatchedApplication", fields: [matchedApplicationId], references: [id])
+  repayments               ChannelPartnerRepayment[]
+  businessActivities       ChannelPartnerBusinessActivity[]
+
+  @@map("channel_partner_applications")
+  @@unique([partnerId, partnerBeneficiaryId], name: "partner_beneficiary_unique")
+  @@index([matchedUserId])
+  @@index([matchedApplicationId])
+  @@index([lastSyncedAt])
+}
+
+model ChannelPartnerRepayment {
+  id                    String        @id @default(uuid())
+  partnerApplicationId  String
+  dueDate               DateTime
+  paidDate              DateTime?
+  status                String
+  amountDue             Float
+  amountPaid            Float?
+  daysLate              Int?          @default(0)
+  notes                 String?
+  createdAt             DateTime      @default(now())
+
+  application           ChannelPartnerApplication @relation(fields: [partnerApplicationId], references: [id], onDelete: Cascade)
+
+  @@map("channel_partner_repayments")
+  @@index([partnerApplicationId])
+  @@index([dueDate])
+}
+
+model ChannelPartnerBusinessActivity {
+  id                    String        @id @default(uuid())
+  partnerApplicationId  String
+  activityType          String?
+  description           String?
+  monthlyRevenue        Float?
+  annualTurnover        Float?
+  employeeCount         Int?
+  location              String?
+  notes                 String?
+  createdAt             DateTime      @default(now())
+
+  application           ChannelPartnerApplication @relation(fields: [partnerApplicationId], references: [id], onDelete: Cascade)
+
+  @@map("channel_partner_business_activity")
+  @@index([partnerApplicationId])
 }
