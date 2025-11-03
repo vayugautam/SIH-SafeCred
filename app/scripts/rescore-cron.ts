@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import cron from 'node-cron'
 
-const endpoint = process.env.RESCORE_CRON_ENDPOINT ?? 'http://localhost:3000/api/admin/rescore'
+const endpoint = process.env.RESCORE_CRON_ENDPOINT ?? 'http://localhost:3002/api/admin/rescore'
 const cronToken = process.env.RESCORE_CRON_TOKEN
 const cronExpression = process.env.RESCORE_CRON_EXPRESSION ?? '0 3 * * *'
 const timezone = process.env.RESCORE_CRON_TZ ?? 'Asia/Kolkata'

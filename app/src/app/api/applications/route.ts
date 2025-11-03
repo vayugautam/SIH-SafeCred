@@ -6,6 +6,47 @@ import { z } from 'zod'
 import axios from 'axios'
 import { sendEmail, applicationSubmittedEmail, adminNotificationEmail } from '@/lib/email'
 
+const bankStatementSchema = z
+  .object({
+    monthlyCredits: z.number().min(0).optional(),
+    avgBalance: z.number().min(0).optional(),
+  })
+  .optional()
+
+const rechargeHistorySchema = z
+  .object({
+    frequency: z.number().min(0).optional(),
+    avgAmount: z.number().min(0).optional(),
+  })
+  .optional()
+
+const electricityBillsSchema = z
+  .object({
+    frequency: z.number().min(0).optional(),
+    avgPayment: z.number().min(0).optional(),
+    consistency: z.number().min(0).max(1).optional(),
+  })
+  .optional()
+
+const educationFeesSchema = z
+  .object({
+    avgFee: z.number().min(0).optional(),
+    consistency: z.number().min(0).max(1).optional(),
+    onTimeRatio: z.number().min(0).max(1).optional(),
+    frequency: z.number().min(0).optional(),
+  })
+  .optional()
+
+const repaymentHistorySchema = z
+  .object({
+    onTimeRatio: z.number().min(0).max(1).optional(),
+    avgPaymentDelayDays: z.number().min(0).optional(),
+    missedCount: z.number().min(0).optional(),
+    previousLoansCount: z.number().min(0).optional(),
+    timeSinceLastLoan: z.number().min(0).optional(),
+  })
+  .optional()
+
 const applicationSchema = z.object({
   declaredIncome: z.number().min(0),
   loanAmount: z.number().min(1000).max(100000),
@@ -15,9 +56,15 @@ const applicationSchema = z.object({
   consentElectricity: z.boolean().default(false),
   consentEducation: z.boolean().default(false),
   consentBankStatement: z.boolean().default(false),
+  existingLoanAmount: z.number().min(0).optional(),
+  bankStatement: bankStatementSchema,
+  rechargeHistory: rechargeHistorySchema,
+  electricityBills: electricityBillsSchema,
+  educationFees: educationFeesSchema,
+  repaymentHistory: repaymentHistorySchema,
 })
 
-const ML_API_URL = process.env.ML_API_URL || 'http://localhost:8001'
+const ML_API_URL = process.env.ML_API_URL || 'http://localhost:8002'
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +76,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
     const validatedData = applicationSchema.parse(body)
+
+    const {
+      declaredIncome,
+      loanAmount,
+      tenureMonths,
+      purpose,
+      consentRecharge,
+      consentElectricity,
+      consentEducation,
+      consentBankStatement,
+      existingLoanAmount,
+      bankStatement,
+      rechargeHistory,
+      electricityBills,
+      educationFees,
+      repaymentHistory: repaymentHistoryInput,
+    } = validatedData
 
     // Get user details
     const user = await prisma.user.findUnique({
@@ -43,7 +107,14 @@ export async function POST(request: NextRequest) {
     const application = await prisma.application.create({
       data: {
         userId: user.id,
-        ...validatedData,
+        declaredIncome,
+        loanAmount,
+        tenureMonths,
+        purpose,
+        consentRecharge,
+        consentElectricity,
+        consentEducation,
+        consentBankStatement,
         status: 'PROCESSING',
       },
     })
@@ -86,8 +157,8 @@ export async function POST(request: NextRequest) {
     })
 
     const onTimeRatio = totalPayments > 0 ? onTimePayments / totalPayments : 0
-    const avgDelayDays = totalPayments > 0 ? totalDelayDays / totalPayments : 0
-    const avgPrevRepaymentRatio = totalPayments > 0 ? onTimePayments / totalPayments : 0
+  const avgDelayDays = totalPayments > 0 ? totalDelayDays / totalPayments : 0
+  const avgPrevRepaymentRatio = totalPayments > 0 ? onTimePayments / totalPayments : 0
 
     // Calculate time since last loan safely
     let timeSinceLastLoan = 999 // Default for users with no previous loans
@@ -103,6 +174,35 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare data for ML API with historical context
+    const existingLoanAmt = typeof existingLoanAmount === 'number' ? existingLoanAmount : totalPreviousLoanAmount
+
+    const mergedRepaymentHistory = {
+      on_time_ratio:
+        typeof repaymentHistoryInput?.onTimeRatio === 'number'
+          ? repaymentHistoryInput.onTimeRatio
+          : onTimeRatio,
+      avg_payment_delay_days:
+        typeof repaymentHistoryInput?.avgPaymentDelayDays === 'number'
+          ? repaymentHistoryInput.avgPaymentDelayDays
+          : avgDelayDays,
+      missed_count:
+        typeof repaymentHistoryInput?.missedCount === 'number'
+          ? repaymentHistoryInput.missedCount
+          : totalDefaults,
+      avg_repayment_ratio:
+        typeof repaymentHistoryInput?.onTimeRatio === 'number'
+          ? repaymentHistoryInput.onTimeRatio
+          : avgPrevRepaymentRatio,
+      previous_loans_count:
+        typeof repaymentHistoryInput?.previousLoansCount === 'number'
+          ? repaymentHistoryInput.previousLoansCount
+          : previousApplications.length,
+      time_since_last_loan:
+        typeof repaymentHistoryInput?.timeSinceLastLoan === 'number'
+          ? repaymentHistoryInput.timeSinceLastLoan
+          : timeSinceLastLoan,
+    }
+
     const mlPayload = {
       name: user.name,
       mobile: user.mobile || '0000000000',
@@ -111,25 +211,44 @@ export async function POST(request: NextRequest) {
       has_children: user.hasChildren || false,
       is_socially_disadvantaged: user.isSociallyDisadvantaged || false,
       dependents: 0, // Default value
-      declared_income: validatedData.declaredIncome,
-      loan_amount: validatedData.loanAmount,
-      tenure_months: validatedData.tenureMonths,
-      purpose: validatedData.purpose || 'Personal',
-      existing_loan_amt: totalPreviousLoanAmount,
-      consent_recharge: validatedData.consentRecharge || false,
-      consent_electricity: validatedData.consentElectricity || false,
-      consent_education: validatedData.consentEducation || false,
-      consent_bank_statement: validatedData.consentBankStatement || false,
+      declared_income: declaredIncome,
+      loan_amount: loanAmount,
+      tenure_months: tenureMonths,
+      purpose: purpose || 'Personal',
+      existing_loan_amt: existingLoanAmt,
+      consent_recharge: consentRecharge || false,
+      consent_electricity: consentElectricity || false,
+      consent_education: consentEducation || false,
+      consent_bank_statement: consentBankStatement || false,
       application_id: application.applicationId,
-      // Historical repayment data - using exact field names expected by ML API
-      repayment_history: {
-        on_time_ratio: onTimeRatio,
-        avg_payment_delay_days: avgDelayDays,
-        missed_count: totalDefaults,
-        avg_repayment_ratio: avgPrevRepaymentRatio,
-        previous_loans_count: previousApplications.length,
-        time_since_last_loan: timeSinceLastLoan,
-      },
+      bank_statement: bankStatement
+        ? {
+            monthly_credits: bankStatement.monthlyCredits,
+            avg_balance: bankStatement.avgBalance,
+          }
+        : undefined,
+      recharge_history: rechargeHistory
+        ? {
+            frequency: rechargeHistory.frequency,
+            avg_amount: rechargeHistory.avgAmount,
+          }
+        : undefined,
+      electricity_bills: electricityBills
+        ? {
+            frequency: electricityBills.frequency,
+            avg_payment: electricityBills.avgPayment,
+            consistency: electricityBills.consistency,
+          }
+        : undefined,
+      education_fees: educationFees
+        ? {
+            avg_fee: educationFees.avgFee,
+            consistency: educationFees.consistency,
+            ontime_ratio: educationFees.onTimeRatio,
+            frequency: educationFees.frequency,
+          }
+        : undefined,
+      repayment_history: mergedRepaymentHistory,
     }
 
     console.log('📊 ML Payload Summary:', {
@@ -148,24 +267,45 @@ export async function POST(request: NextRequest) {
         timeout: 30000, // 30 seconds
       })
 
-      console.log('✅ ML API Response received')
-      const mlResult = mlResponse.data
+  console.log('✅ ML API Response received')
+  const mlResult = mlResponse.data
 
       // Update application with ML results
-      const updatedApplication = await prisma.application.update({
-        where: { id: application.id },
-        data: {
+        const normalizedRiskBand = mlResult.risk_band?.replace(' ', '_').toUpperCase()
+        const riskNeedLabel = mlResult.risk_category
+          ? `${mlResult.risk_category} + ${mlResult.risk_band}`
+          : `${user.isSociallyDisadvantaged ? 'High Need' : 'Low Need'} + ${mlResult.risk_band ?? 'Unclassified'}`
+
+        const updateData: any = {
           mlProbability: mlResult.ml_probability,
           compositeScore: mlResult.composite_score,
           finalSci: mlResult.final_sci,
-          riskBand: mlResult.risk_band?.replace(' ', '_').toUpperCase(),
+          riskBand: normalizedRiskBand,
+          riskCategory: mlResult.risk_category ?? null,
+          needCategory: riskNeedLabel,
           approvedLoanAmount: mlResult.loan_offer,
           decisionMessage: mlResult.message,
-          status: mlResult.status === 'approved' ? 'APPROVED' : 
+          scoreDetails: mlResult.details ?? null,
+          status: mlResult.status === 'approved' ? 'APPROVED' :
                   mlResult.status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW',
           processedAt: new Date(),
           submittedAt: new Date(),
-        },
+        }
+
+        if (mlResult.status === 'approved') {
+          updateData.approvedAt = new Date()
+          updateData.rejectedAt = null
+        } else if (mlResult.status === 'rejected') {
+          updateData.approvedAt = null
+          updateData.rejectedAt = new Date()
+        } else {
+          updateData.approvedAt = null
+          updateData.rejectedAt = null
+        }
+
+        const updatedApplication = await prisma.application.update({
+          where: { id: application.id },
+          data: updateData,
         include: {
           user: {
             select: {
@@ -202,6 +342,8 @@ export async function POST(request: NextRequest) {
             loanAmount: validatedData.loanAmount,
             status: updatedApplication.status,
             riskBand: updatedApplication.riskBand,
+            riskCategory: (updatedApplication as any).riskCategory,
+            needCategory: (updatedApplication as any).needCategory,
           }),
         },
       })
@@ -255,9 +397,20 @@ export async function POST(request: NextRequest) {
           applicationId: mlResult.application_id,
           status: mlResult.status,
           riskBand: mlResult.risk_band,
+          riskCategory: mlResult.risk_category,
+          needCategory: riskNeedLabel,
           loanOffer: mlResult.loan_offer,
           finalSci: mlResult.final_sci,
+          compositeScore: mlResult.composite_score,
+          mlProbability: mlResult.ml_probability,
           message: mlResult.message,
+          details: mlResult.details
+            ? {
+                ...mlResult.details,
+                scoreBreakdown: mlResult.details.score_breakdown,
+                combineDetails: mlResult.details.combine_details,
+              }
+            : null,
         },
       })
     } catch (mlError: any) {
@@ -278,12 +431,27 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json(
         {
-          success: false,
-          error: 'ML processing failed',
-          message: 'Your application has been submitted and will be reviewed manually',
-          applicationId: application.applicationId,
+          success: true,
+          message:
+            'Your application is submitted and queued for manual review while we reconnect to the scoring service.',
+          application: {
+            applicationId: application.applicationId,
+            status: 'MANUAL_REVIEW',
+            decisionMessage: 'Application requires manual review due to temporary scoring outage.',
+          },
+          mlResult: {
+            applicationId: application.applicationId,
+            status: 'manual_review',
+            riskBand: null,
+            loanOffer: 0,
+            finalSci: null,
+            compositeScore: null,
+            mlProbability: null,
+            message:
+              'We will finish your assessment shortly. No action needed from your side right now.',
+          },
         },
-        { status: 500 }
+        { status: 202 }
       )
     }
   } catch (error) {
@@ -321,7 +489,17 @@ export async function GET(request: NextRequest) {
         tenureMonths: true,
         status: true,
         riskBand: true,
+        riskCategory: true,
+        needCategory: true,
         finalSci: true,
+        mlProbability: true,
+        compositeScore: true,
+        decisionMessage: true,
+        scoreDetails: true,
+        consentRecharge: true,
+        consentElectricity: true,
+        consentEducation: true,
+        consentBankStatement: true,
         createdAt: true,
         processedAt: true,
       },
