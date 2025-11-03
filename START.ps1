@@ -17,15 +17,15 @@ function Stop-PortIfBusy {
     if (-not $lines) { return }
 
     foreach ($line in $lines) {
-        $parts = $line.ToString().Trim().Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
-        $pid = $parts[-1]
+        $parts = $line.ToString().Trim() -split '\s+'
+        $procId = $parts[-1]
 
-        if ($pid -match '^[0-9]+$') {
+        if ($procId -match '^[0-9]+$') {
             try {
-                Write-Host "  ⚠ Port $Port in use by PID $pid. Terminating..." -ForegroundColor Yellow
-                taskkill /PID $pid /F | Out-Null
+                Write-Host "  ⚠ Port $Port in use by PID $procId. Terminating..." -ForegroundColor Yellow
+                taskkill /PID $procId /F | Out-Null
             } catch {
-                Write-Host "  ❌ Failed to terminate PID $pid on port $Port" -ForegroundColor Red
+                Write-Host "  ❌ Failed to terminate PID $procId on port $Port" -ForegroundColor Red
             }
         }
     }
@@ -63,13 +63,13 @@ Write-Host ""
 Write-Host "[3/6] Starting ML API Server (8002)..." -ForegroundColor Yellow
 Write-Host "Opening new terminal for ML API..." -ForegroundColor Cyan
 
-$mlCommand = @(
-    "cd '$ML_DIR'",
-    "Write-Host 'Starting ML API Server on http://localhost:8002...' -ForegroundColor Green",
-    "if (Test-Path .\\.venv\\Scripts\\Activate.ps1) { . .\\.venv\\Scripts\\Activate.ps1 }",
-    "python application_api.py",
-    "Read-Host 'Press Enter to close'"
-) -join '; '
+$mlCommand = @"
+    cd '$ML_DIR'
+    Write-Host 'Starting ML API Server on http://localhost:8002...' -ForegroundColor Green
+    if (Test-Path '.\venv\Scripts\Activate.ps1') { . '.\venv\Scripts\Activate.ps1' }
+    python application_api.py
+    Read-Host 'Press Enter to close'
+"@
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $mlCommand
 
@@ -79,7 +79,12 @@ Write-Host ""
 Write-Host "[4/6] Starting Backend API (3001)..." -ForegroundColor Yellow
 Write-Host "Opening new terminal for backend..." -ForegroundColor Cyan
 
-$backendCommand = "cd '$BACKEND_DIR'; Write-Host 'Starting Backend API on http://localhost:3001...' -ForegroundColor Green; npm run dev; Read-Host 'Press Enter to close'"
+$backendCommand = @"
+    cd '$BACKEND_DIR'
+    Write-Host 'Starting Backend API on http://localhost:3001...' -ForegroundColor Green
+    npm run dev
+    Read-Host 'Press Enter to close'
+"@
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCommand
 
 Write-Host "[OK] Backend terminal opened" -ForegroundColor Green
@@ -88,7 +93,12 @@ Write-Host ""
 Write-Host "[5/6] Starting Next.js Development Server (3002)..." -ForegroundColor Yellow
 Write-Host "Opening new terminal for Next.js..." -ForegroundColor Cyan
 
-$nextCommand = "cd '$APP_DIR'; Write-Host 'Starting Next.js Development Server on http://localhost:3002...' -ForegroundColor Green; npm run dev; Read-Host 'Press Enter to close'"
+$nextCommand = @"
+    cd '$APP_DIR'
+    Write-Host 'Starting Next.js Development Server on http://localhost:3002...' -ForegroundColor Green
+    npm run dev
+    Read-Host 'Press Enter to close'
+"@
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $nextCommand
 

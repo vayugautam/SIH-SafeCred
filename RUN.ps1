@@ -22,15 +22,15 @@ function Stop-PortIfBusy {
     }
 
     foreach ($line in $lines) {
-        $parts = $line.ToString().Trim().Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries)
-        $pid = $parts[-1]
+        $parts = $line.ToString().Trim() -split '\s+'
+        $procId = $parts[-1]
 
-        if ($pid -match '^[0-9]+$') {
+        if ($procId -match '^[0-9]+$') {
             try {
-                Write-Host "  ⚠ Port $Port in use by PID $pid. Terminating..." -ForegroundColor Yellow
-                taskkill /PID $pid /F | Out-Null
+                Write-Host "  ⚠ Port $Port in use by PID $procId. Terminating..." -ForegroundColor Yellow
+                taskkill /PID $procId /F | Out-Null
             } catch {
-                Write-Host "  ❌ Failed to terminate PID $pid on port $Port" -ForegroundColor Red
+                Write-Host "  ❌ Failed to terminate PID $procId on port $Port" -ForegroundColor Red
             }
         }
     }
@@ -58,12 +58,12 @@ Write-Host ""
 Write-Host "Starting ML API Server (Port 8002)..." -ForegroundColor Yellow
 Set-Location $ML_DIR
 
-$mlCommand = @(
-    "cd '$ML_DIR'",
-    "if (Test-Path .\\.venv\\Scripts\\Activate.ps1) { . .\\.venv\\Scripts\\Activate.ps1 }",
-    "`$env:DATABASE_URL='$($env:DATABASE_URL)'",
-    "python application_api.py"
-) -join '; '
+$mlCommand = @"
+    cd '$ML_DIR'
+    if (Test-Path '.\venv\Scripts\Activate.ps1') { . '.\venv\Scripts\Activate.ps1' }
+    `$env:DATABASE_URL='$($env:DATABASE_URL)'
+    python application_api.py
+"@
 
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $mlCommand -WindowStyle Normal
 
@@ -75,7 +75,10 @@ Start-Sleep -Seconds 3
 Write-Host "Starting Backend API (Port 3001)..." -ForegroundColor Yellow
 Set-Location $BACKEND_DIR
 
-$backendCommand = "cd '$BACKEND_DIR'; npm run dev"
+$backendCommand = @"
+    cd '$BACKEND_DIR'
+    npm run dev
+"@
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCommand -WindowStyle Normal
 
 Write-Host "  ✓ Backend starting on http://localhost:3001" -ForegroundColor Green
@@ -86,7 +89,10 @@ Start-Sleep -Seconds 3
 Write-Host "Starting Next.js Frontend (Port 3002)..." -ForegroundColor Yellow
 Set-Location $APP_DIR
 
-$frontendCommand = "cd '$APP_DIR'; npm run dev"
+$frontendCommand = @"
+    cd '$APP_DIR'
+    npm run dev
+"@
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCommand -WindowStyle Normal
 
 Write-Host "  ✓ Frontend starting on http://localhost:3002" -ForegroundColor Green
