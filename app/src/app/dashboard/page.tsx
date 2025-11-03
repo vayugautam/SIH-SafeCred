@@ -7,8 +7,9 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Plus, FileText, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, LogOut } from 'lucide-react'
+import { Shield, Plus, FileText, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Sparkles, ArrowRight } from 'lucide-react'
 import { formatCurrency, formatDate, formatPercent, formatNumber } from '@/lib/utils'
+import { Loading } from '@/components/ui/loading'
 
 interface Application {
   id: string
@@ -158,31 +159,48 @@ export default function DashboardPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="mb-6 flex justify-center">
+            <div className="p-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-2xl">
+              <Shield className="h-16 w-16 text-white animate-pulse" />
+            </div>
+          </div>
+          <Loading size="lg" text="Loading your dashboard..." />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
+      <header className="glass border-b border-white/50 sticky top-0 z-10 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <Shield className="h-8 w-8 text-blue-600" />
-              <span className="text-2xl font-bold">SafeCred</span>
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <Shield className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-bold gradient-text">SafeCred</span>
             </Link>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium">{session?.user?.name}</p>
-                <p className="text-xs text-gray-500">{session?.user?.email}</p>
+                <p className="text-sm font-semibold text-slate-700">{session?.user?.name}</p>
+                <p className="text-xs text-slate-500">{session?.user?.email}</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => router.push('/api/auth/signout')}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => router.push('/api/auth/signout')}
+                className="border-2 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-300 rounded-xl"
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -192,80 +210,92 @@ export default function DashboardPage() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {session?.user?.name?.split(' ')[0]}!
+        <div className="mb-8 fade-in-up">
+          <h1 className="text-4xl font-bold gradient-text mb-3 flex items-center gap-3">
+            Welcome back, {session?.user?.name?.split(' ')[0]}! 
+            <Sparkles className="h-8 w-8 text-yellow-500 animate-pulse" />
           </h1>
-          <p className="text-gray-600">Manage your loan applications and track your credit score</p>
+          <p className="text-slate-600 text-lg">Manage your loan applications and track your credit score</p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="glass border-gradient hover-lift glow-hover fade-in-up">
             <CardHeader className="pb-2">
-              <CardDescription>Total Applications</CardDescription>
-              <CardTitle className="text-3xl">{applications.length}</CardTitle>
+              <CardDescription className="text-slate-600 font-medium">Total Applications</CardDescription>
+              <CardTitle className="text-4xl font-bold gradient-text">{applications.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="glass border-gradient hover-lift glow-hover fade-in-up" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="pb-2">
-              <CardDescription>Approved</CardDescription>
-              <CardTitle className="text-3xl text-green-600">
+              <CardDescription className="text-slate-600 font-medium">Approved</CardDescription>
+              <CardTitle className="text-4xl font-bold text-transparent bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text flex items-center gap-2">
                 {applications.filter(a => a.status === 'APPROVED').length}
+                <CheckCircle className="h-6 w-6 text-green-500" />
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="glass border-gradient hover-lift glow-hover fade-in-up" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="pb-2">
-              <CardDescription>Pending</CardDescription>
-              <CardTitle className="text-3xl text-yellow-600">
+              <CardDescription className="text-slate-600 font-medium">Pending</CardDescription>
+              <CardTitle className="text-4xl font-bold text-transparent bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text flex items-center gap-2">
                 {applications.filter(a => a.status === 'PENDING' || a.status === 'PROCESSING').length}
+                <Clock className="h-6 w-6 text-yellow-500" />
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card>
+          <Card className="glass border-gradient hover-lift glow-hover fade-in-up" style={{ animationDelay: '0.3s' }}>
             <CardHeader className="pb-2">
-              <CardDescription>Total Approved Amount</CardDescription>
-              <CardTitle className="text-3xl text-blue-600">
+              <CardDescription className="text-slate-600 font-medium">Total Approved Amount</CardDescription>
+              <CardTitle className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text flex items-center gap-2">
                 {formatCurrency(
                   applications
                     .filter(a => a.status === 'APPROVED')
                     .reduce((sum, a) => sum + (a.approvedLoanAmount || 0), 0)
                 )}
+                <TrendingUp className="h-6 w-6 text-blue-500" />
               </CardTitle>
             </CardHeader>
           </Card>
         </div>
 
         {/* Action Button */}
-        <div className="mb-8">
+        <div className="mb-8 fade-in-up" style={{ animationDelay: '0.4s' }}>
           <Link href="/apply">
-            <Button size="lg" className="gap-2">
-              <Plus className="h-5 w-5" />
+            <Button size="lg" className="gap-2 h-14 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" />
               Apply for New Loan
+              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Link>
         </div>
 
         {/* Applications List */}
-        <Card>
+        <Card className="glass border-gradient shadow-xl fade-in-up" style={{ animationDelay: '0.5s' }}>
           <CardHeader>
-            <CardTitle>Your Applications</CardTitle>
-            <CardDescription>Track the status of your loan applications</CardDescription>
+            <CardTitle className="text-2xl gradient-text">Your Applications</CardTitle>
+            <CardDescription className="text-base">Track the status of your loan applications</CardDescription>
           </CardHeader>
           <CardContent>
             {error && (
-              <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                {error}
+              <div className="mb-4 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 p-4 text-sm text-red-700 shadow-md slide-in-from-top">
+                <strong className="font-semibold">Error:</strong> {error}
               </div>
             )}
             {applications.length === 0 ? (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
-                <p className="text-gray-600 mb-4">Start your loan application process today</p>
+              <div className="text-center py-16">
+                <div className="mb-6 flex justify-center">
+                  <div className="p-4 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl">
+                    <FileText className="h-16 w-16 text-slate-500" />
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold gradient-text mb-3">No applications yet</h3>
+                <p className="text-slate-600 mb-6 text-lg">Start your loan application process today</p>
                 <Link href="/apply">
-                  <Button>Apply for Loan</Button>
+                  <Button className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group">
+                    Apply for Loan
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
                 </Link>
               </div>
             ) : (
@@ -339,29 +369,29 @@ export default function DashboardPage() {
                       : 'warning'
 
                   return (
-                    <div key={app.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div key={app.id} className="border-2 border-slate-200 rounded-xl p-6 hover-lift bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:border-blue-300">
                       <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                         <div>
                           <div className="flex flex-wrap items-center gap-3 mb-2">
-                            <h3 className="font-semibold text-lg">Application #{app.applicationId}</h3>
+                            <h3 className="font-bold text-xl gradient-text">Application #{app.applicationId}</h3>
                             {getStatusBadge(app.status)}
                             {app.riskBand && getRiskBadge(app.riskBand)}
                             {app.needCategory && (
                               <Badge variant="info">{app.needCategory}</Badge>
                             )}
                           </div>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-slate-500 font-medium">
                             Applied on {formatDate(app.createdAt)}
                           </p>
                           {app.riskCategory && (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-slate-500 mt-1">
                               Risk category: {app.riskCategory}
                             </p>
                           )}
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-500">Requested Amount</p>
-                          <p className="text-xl font-bold text-gray-900">
+                          <p className="text-sm text-slate-500 font-medium">Requested Amount</p>
+                          <p className="text-2xl font-bold gradient-text">
                             {formatCurrency(app.loanAmount)}
                           </p>
                         </div>

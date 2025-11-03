@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -57,21 +57,7 @@ export default function AdminApplicationsPage() {
     search: '',
   })
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'LOAN_OFFICER') {
-      router.push('/dashboard')
-      return
-    }
-
-    fetchApplications()
-  }, [session, status, router, pagination.page, filters])
-
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         page: pagination.page.toString(),
@@ -97,7 +83,21 @@ export default function AdminApplicationsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [filters, pagination.limit, pagination.page])
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+      return
+    }
+
+    if (session?.user?.role !== 'ADMIN' && session?.user?.role !== 'LOAN_OFFICER') {
+      router.push('/dashboard')
+      return
+    }
+
+    fetchApplications()
+  }, [session, status, router, fetchApplications])
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters({ ...filters, [key]: value })
@@ -157,6 +157,12 @@ export default function AdminApplicationsPage() {
               <span className="text-2xl font-bold">SafeCred Admin</span>
             </Link>
             <div className="flex items-center space-x-4">
+              <Link href="/admin/analytics">
+                <Button variant="outline">Analytics</Button>
+              </Link>
+              <Link href="/admin/operations">
+                <Button variant="outline">Operations</Button>
+              </Link>
               <Link href="/admin">
                 <Button variant="outline">Dashboard</Button>
               </Link>

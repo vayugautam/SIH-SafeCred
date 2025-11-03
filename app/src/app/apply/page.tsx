@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Loader2, CheckCircle, AlertTriangle, XCircle, Clock, Sparkles } from 'lucide-react'
+import { Shield, Loader2, CheckCircle, AlertTriangle, XCircle, Clock, Sparkles, ArrowRight, ArrowLeft, TrendingUp, FileText, DollarSign, Calendar, Info } from 'lucide-react'
 import { formatCurrency, formatPercent, formatNumber } from '@/lib/utils'
 
 const createInitialFormState = () => ({
@@ -160,10 +160,23 @@ export default function ApplyPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <Shield className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">Loading application form...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
+        {/* Animated background */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="mb-6 flex justify-center">
+            <div className="p-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-2xl">
+              <Shield className="h-16 w-16 text-white animate-pulse" />
+            </div>
+          </div>
+          <p className="text-xl text-slate-700 font-semibold">Loading application form...</p>
+          <div className="mt-4 flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          </div>
         </div>
       </div>
     )
@@ -714,102 +727,134 @@ export default function ApplyPage() {
   const consentDepthPreview = consentsSelected / totalConsentSlots
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
-      <header className="bg-white/80 backdrop-blur border-b">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
+      {/* Animated background orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <header className="glass border-b border-white/50 sticky top-0 z-10 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-blue-700">
-            <Shield className="h-6 w-6" />
-            SafeCred
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold gradient-text">SafeCred</span>
           </Link>
-          <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700">
+          <Link href="/dashboard" className="text-sm font-semibold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text hover:from-blue-700 hover:to-purple-700 transition-all flex items-center gap-2 group">
+            <ArrowLeft className="h-4 w-4 text-blue-600 group-hover:-translate-x-1 transition-transform" />
             Back to dashboard
           </Link>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-10 max-w-6xl">
+      <main className="container mx-auto px-4 py-10 max-w-6xl relative z-10">
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-          <Card className="border-2">
+          <Card className="glass border-gradient shadow-2xl fade-in-up">
             <CardHeader>
-              <CardTitle>Submit loan application</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-3xl gradient-text flex items-center gap-3">
+                <FileText className="h-8 w-8 text-blue-600" />
+                Submit Loan Application
+              </CardTitle>
+              <CardDescription className="text-base mt-2">
                 Share your income details and choose which data sources you consent to share. More consents unlock higher fairness bonuses and faster decisions.
               </CardDescription>
             </CardHeader>
             <CardContent>
               {error && (
-                <div className="mb-6 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
+                <div className="mb-6 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 px-4 py-3 text-sm text-red-700 shadow-md slide-in-from-top">
+                  <strong className="font-semibold">Error:</strong> {error}
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-8">
                 {currentStep === 'income' && (
                   <>
-                    <section>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Loan request</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="declaredIncome">Monthly income (₹)</Label>
+                    <section className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
+                      <h3 className="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
+                        <DollarSign className="h-7 w-7 text-blue-600" />
+                        Loan Request Details
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="declaredIncome" className="text-slate-700 font-semibold flex items-center gap-2">
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            Monthly Income (₹)
+                          </Label>
                           <Input
                             id="declaredIncome"
                             type="number"
                             min="0"
                             placeholder="e.g. 12000"
+                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
                             value={formData.declaredIncome}
                             onChange={(e) => setFormData((prev) => ({ ...prev, declaredIncome: e.target.value }))}
                             disabled={isLoading}
                             required
                           />
-                          <p className="mt-1 text-xs text-gray-500">
+                          <p className="mt-2 text-xs text-slate-600 flex items-start gap-1">
+                            <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
                             We cross-verify this with NBCFDC. Accurate declarations route you to the correct evaluation pathway.
                           </p>
                         </div>
-                        <div>
-                          <Label htmlFor="loanAmount">Loan amount (₹)</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor="loanAmount" className="text-slate-700 font-semibold flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-blue-600" />
+                            Loan Amount (₹)
+                          </Label>
                           <Input
                             id="loanAmount"
                             type="number"
                             min="1000"
                             max="100000"
                             placeholder="e.g. 20000"
+                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
                             value={formData.loanAmount}
                             onChange={(e) => setFormData((prev) => ({ ...prev, loanAmount: e.target.value }))}
                             disabled={isLoading}
                             required
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="tenureMonths">Requested tenure (months)</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor="tenureMonths" className="text-slate-700 font-semibold flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-purple-600" />
+                            Requested Tenure (months)
+                          </Label>
                           <Input
                             id="tenureMonths"
                             type="number"
                             min="3"
                             max="36"
+                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
                             value={formData.tenureMonths}
                             onChange={(e) => setFormData((prev) => ({ ...prev, tenureMonths: e.target.value }))}
                             disabled={isLoading}
                             required
                           />
                         </div>
-                        <div>
-                          <Label htmlFor="existingLoanAmount">Existing active loan (₹)</Label>
+                        <div className="space-y-2">
+                          <Label htmlFor="existingLoanAmount" className="text-slate-700 font-semibold">
+                            Existing Active Loan (₹)
+                          </Label>
                           <Input
                             id="existingLoanAmount"
                             type="number"
                             min="0"
                             placeholder="Optional"
+                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
                             value={formData.existingLoanAmount}
                             onChange={(e) => setFormData((prev) => ({ ...prev, existingLoanAmount: e.target.value }))}
                             disabled={isLoading}
                           />
                         </div>
                       </div>
-                      <div className="mt-4">
-                        <Label htmlFor="purpose">Purpose of loan (optional)</Label>
+                      <div className="mt-6 space-y-2">
+                        <Label htmlFor="purpose" className="text-slate-700 font-semibold">Purpose of Loan (optional)</Label>
                         <Textarea
                           id="purpose"
                           placeholder="Tell us how this loan will be used"
+                          className="border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
                           value={formData.purpose}
                           onChange={(e) => setFormData((prev) => ({ ...prev, purpose: e.target.value }))}
                           disabled={isLoading}
@@ -818,11 +863,14 @@ export default function ApplyPage() {
                       </div>
                     </section>
 
-                    <section className="border-t pt-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-3">Why we ask for income first</h3>
-                      <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-                        <p className="font-medium">Income barrier: ₹{incomeBarrier.toLocaleString('en-IN')}</p>
-                        <p className="mt-1">
+                    <section className="border-t-2 pt-6">
+                      <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                        <Info className="h-5 w-5 text-blue-600" />
+                        Why We Ask for Income First
+                      </h3>
+                      <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-md">
+                        <p className="font-semibold text-lg text-blue-900">Income Barrier: ₹{incomeBarrier.toLocaleString('en-IN')}</p>
+                        <p className="mt-3 text-sm text-slate-700 leading-relaxed">
                           Applicants below the barrier unlock fairness boosts and alternative proxies. Applicants above the barrier are evaluated strictly on
                           repayment history and bank evidence. Continue to proceed to your tailored experience.
                         </p>
@@ -833,21 +881,22 @@ export default function ApplyPage() {
                       <Button
                         type="button"
                         size="lg"
-                        className="flex-1"
+                        className="flex-1 h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group"
                         disabled={isLoading}
                         onClick={handleIncomeStepContinue}
                       >
                         Continue
+                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         size="lg"
-                        className="flex-1"
+                        className="flex-1 h-14 border-2 hover:bg-slate-50 rounded-xl font-semibold"
                         disabled={isLoading}
                         onClick={resetForm}
                       >
-                        Clear form
+                        Clear Form
                       </Button>
                     </div>
                   </>
