@@ -93,7 +93,7 @@ python application_api.py
 python test_application_api.py
 ```
 
-**Server starts on:** `http://localhost:8001`
+**Server starts on:** `http://localhost:8002`
 
 **Try it now:**
 1. Open `ml/demo_application.html` in your browser
@@ -103,27 +103,34 @@ python test_application_api.py
 
 ### Option 2: Full Stack (Recommended)
 
+#### ML Service (Python/FastAPI)
+```bash
+cd ml
+.\.venv\Scripts\Activate
+python application_api.py   # runs on :8002
+```
+
 #### Backend (Node.js API)
 ```bash
 cd backend
 npm install
-npm run dev   # runs Express on :5000
+npm run dev   # runs Express on :3001
 ```
 
 #### Frontend (Next.js 14+)
 ```bash
 cd app
 npm install
-npm run dev   # runs Next.js on :3000 (or set PORT)
+npm run dev   # runs Next.js on :3002
 ```
 
 ---
 
 ## 📡 API Endpoints
 
-### 🌟 NEW: Application Processing API
+### Application Processing API
 
-**Base URL:** `http://localhost:8001`
+**Base URL:** `http://localhost:8002`
 
 #### Submit Loan Application
 **POST** `/apply`
@@ -169,7 +176,7 @@ Response:
 ```
 
 **📚 Complete API Documentation:**
-- Interactive docs: `http://localhost:8001/docs` (when server running)
+- Interactive docs: `http://localhost:8002/docs` (when server running)
 - Integration guide: [`docs/frontend-integration.md`](docs/frontend-integration.md)
 - Quick start: [`docs/QUICKSTART_APPLICATION_API.md`](docs/QUICKSTART_APPLICATION_API.md)
 
@@ -195,12 +202,12 @@ Return decision (200-500ms)
 
 **Risk Bands & Offers:**
 
-| Risk Band | SCI Score | Base Offer | Status |
+| Risk Band | SCI Score | Base Offer | Interest Rate | Status |
 |-----------|-----------|------------|---------------|---------|
-| Low Risk | 80-100 | ₹20,000 | Auto-approved |
-| Medium Risk | 60-79 | ₹12,000 | Manual review |
-| High Risk | 40-59 | ₹6,000 | Manual review |
-| Reject | 0-39 | ₹0 | Rejected |
+| Low Risk | 80-100 | ₹20,000 | 8.5% | Auto-approved |
+| Medium Risk | 60-79 | ₹12,000 | 10.5% | Manual review |
+| High Risk | 40-59 | ₹6,000 | 12.5% | Manual review |
+| Reject | 0-39 | ₹0 | - | Rejected |
 
 **Consent Bonuses:**
 - Each consent (recharge/electricity/education): +₹1,000 to ₹3,000
@@ -209,9 +216,9 @@ Return decision (200-500ms)
 
 ---
 
-### Phase 0 Endpoints (Original Backend)
+### Backend API Endpoints
 
-**Base URL:** `http://localhost:5000`
+**Base URL:** `http://localhost:3001`
 
 #### Create User
 **POST** `/api/users`  
@@ -272,31 +279,25 @@ Response:
 
 ---
 
-## 🎯 Deliverable before 5 Oct
-- Frontend form submits to `POST /api/applications`  
-- Documents uploaded via `POST /api/applications/:id/documents` and received by backend  
-- Application status flows from `CREATED → READY_FOR_SCORING`  
-
----
-## 🔧 Test commands (using curl)
+## 🔧 Testing Commands
 
 **Create user:**
 ```bash
-curl -X POST http://localhost:5000/api/users \
+curl -X POST http://localhost:3001/api/users \
 -H "Content-Type: application/json" \
 -d '{"name":"Vayu","mobile":"9999999999"}'
 ```
 
 **Create application:**
 ```bash
-curl -X POST http://localhost:5000/api/applications \
+curl -X POST http://localhost:3001/api/applications \
 -H "Content-Type: application/json" \
 -d '{"userId":"user_abc123","income":40000,"loan_amount":100000,"tenure_months":12}'
 ```
 
 **Upload document:**
 ```bash
-curl -X POST http://localhost:5000/api/applications/app_9876/documents \
+curl -X POST http://localhost:3001/api/applications/app_9876/documents \
 -F "file=@/path/to/file.pdf" \
 -F "type=salary"
 ```
@@ -327,7 +328,7 @@ Tests include:
 
 ### Method 3: cURL
 ```bash
-curl -X POST http://localhost:8001/apply \
+curl -X POST http://localhost:8002/apply \
   -H "Content-Type: application/json" \
   -d '{
     "applicant": {
@@ -368,31 +369,38 @@ curl -X POST http://localhost:8001/apply \
 
 ---
 
-## 🎯 Current Status & Roadmap
+## ✨ Implemented Features
 
-### ✅ Completed
-- [x] ML model training pipeline
-- [x] Feature extraction from multiple data sources
-- [x] Composite scoring algorithm
-- [x] **Real-time application processing API** ⭐ NEW
-- [x] **Demo HTML frontend** ⭐ NEW
-- [x] **Automated test suite** ⭐ NEW
-- [x] **Complete API documentation** ⭐ NEW
-- [x] Node.js backend (API)
-- [x] React frontend
+### Core Functionality
+- ✅ AI-powered credit scoring with fairness considerations
+- ✅ Real-time loan application processing (200-500ms response time)
+- ✅ Multi-factor risk assessment using ML models
+- ✅ Proxy data integration (electricity, recharge, education bills)
+- ✅ Composite scoring algorithm with income barriers
+- ✅ Role-based access control (User, Admin, Loan Officer)
 
-### 🚧 In Progress
-- [ ] Frontend integration with ML API
-- [ ] Email/SMS notifications
-- [ ] Loan officer dashboard
-- [ ] Document processing pipeline
+### Frontend Features
+- ✅ Modern responsive UI with Next.js 14+ and React
+- ✅ Glassmorphism effects and gradient animations
+- ✅ User authentication with NextAuth.js
+- ✅ Interactive dashboards for users and admins
+- ✅ Multi-step loan application forms
+- ✅ Real-time application status tracking
 
-### 📅 Upcoming
-- [ ] Production database integration (PostgreSQL/MongoDB)
-- [ ] Authentication & authorization (JWT)
-- [ ] Cloud deployment (AWS/GCP/Azure)
-- [ ] Monitoring & analytics dashboard
-- [ ] Model retraining pipeline
+### Backend & API
+- ✅ RESTful API with Node.js and Express
+- ✅ FastAPI-based ML service with auto-generated docs
+- ✅ PostgreSQL database with Prisma ORM
+- ✅ Automated feature extraction and model inference
+- ✅ Comprehensive error handling and logging
+- ✅ CORS configuration and security middleware
+
+### Developer Experience
+- ✅ Complete documentation (HOW_TO_RUN.md, API docs)
+- ✅ Automated startup scripts (RUN.ps1, START.ps1)
+- ✅ Testing suite for ML API
+- ✅ Development environment setup guides
+- ✅ Git workflows and contribution guidelines
 
 ---
 
@@ -417,10 +425,13 @@ curl -X POST http://localhost:8001/apply \
 - **pandas** - Data processing
 - **joblib** - Model serialization
 
-### Backend (Phase 0)
+### Backend
 - **Node.js** - Runtime
 - **Express** - Web framework
-- **MongoDB/PostgreSQL** - Database
+- **Prisma** - ORM for PostgreSQL
+- **PostgreSQL (Neon)** - Serverless database
+- **NextAuth.js** - Authentication
+- **JWT** - Token-based auth
 
 ### Frontend
 - **Next.js 14+** - React framework (App Router)
@@ -505,6 +516,6 @@ For questions or issues:
 
 ---
 
-**Built with ❤️ for Smart India Hackathon 2024**
+**Built with ❤️ for Smart India Hackathon 2025**
 
-**Last Updated:** October 14, 2025
+**Last Updated:** November 5, 2025
