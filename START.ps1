@@ -6,9 +6,10 @@ Write-Host "  SafeCred Simple Startup" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
-$APP_DIR = "e:\SIH Synapse\SIH-SafeCred\app"
-$BACKEND_DIR = "e:\SIH Synapse\SIH-SafeCred\backend"
-$ML_DIR = "e:\SIH Synapse\SIH-SafeCred\ml"
+$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$APP_DIR = Join-Path $SCRIPT_DIR "app"
+$BACKEND_DIR = Join-Path $SCRIPT_DIR "backend"
+$ML_DIR = Join-Path $SCRIPT_DIR "ml"
 
 function Stop-PortIfBusy {
     param([Parameter(Mandatory = $true)][int]$Port)
