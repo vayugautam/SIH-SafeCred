@@ -65,9 +65,9 @@ $mlCommand = @"
     python application_api.py
 "@
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $mlCommand -WindowStyle Normal
+Start-Process powershell -ArgumentList @("-NoExit", "-Command", $mlCommand) -WindowStyle Normal
 
-Write-Host "  ✓ ML API starting on http://localhost:8002" -ForegroundColor Green
+Write-Host "  + ML API starting on http://localhost:8002" -ForegroundColor Green
 Write-Host ""
 
 Start-Sleep -Seconds 3
@@ -79,9 +79,9 @@ $backendCommand = @"
     cd '$BACKEND_DIR'
     npm run dev
 "@
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCommand -WindowStyle Normal
+Start-Process powershell -ArgumentList @("-NoExit", "-Command", $backendCommand) -WindowStyle Normal
 
-Write-Host "  ✓ Backend starting on http://localhost:3001" -ForegroundColor Green
+Write-Host "  + Backend starting on http://localhost:3001" -ForegroundColor Green
 Write-Host ""
 
 Start-Sleep -Seconds 3
@@ -93,9 +93,9 @@ $frontendCommand = @"
     cd '$APP_DIR'
     npm run dev
 "@
-Start-Process powershell -ArgumentList "-NoExit", "-Command", $frontendCommand -WindowStyle Normal
+Start-Process powershell -ArgumentList @("-NoExit", "-Command", $frontendCommand) -WindowStyle Normal
 
-Write-Host "  ✓ Frontend starting on http://localhost:3002" -ForegroundColor Green
+Write-Host "  + Frontend starting on http://localhost:3002" -ForegroundColor Green
 Write-Host ""
 
 Start-Sleep -Seconds 5
