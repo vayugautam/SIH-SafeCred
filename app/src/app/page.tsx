@@ -10,475 +10,392 @@ import {
   Workflow,
   HeartPulse,
   Globe2,
-  Sparkles
+  Sparkles,
+  Lock,
+  TrendingUp,
+  Activity,
+  ChevronRight,
+  PlayCircle
 } from 'lucide-react'
-
-const headlineStats = [
-  { label: 'Median approval time', value: '42 mins', helper: 'From application to decision' },
-  { label: 'Applicants scored fairly', value: '21k+', helper: 'Across 8 partner states' },
-  { label: 'Average SCI uplift', value: '+18 pts', helper: 'For low-income applicants' }
-]
 
 const features = [
   {
-    icon: <Zap className="h-6 w-6 text-blue-600" />,
-    title: 'Instant, Explainable Decisions',
-    description: 'SafeCred blends ML with behavioural signals and renders a shareable decision narrative in seconds.'
+    icon: <Zap className="h-6 w-6 text-white" />,
+    title: 'Instant Decisions',
+    description: 'AI-driven analysis delivers credit decisions in seconds, not days.',
+    className: "col-span-1 md:col-span-2 lg:col-span-1 bg-blue-600 text-white"
   },
   {
     icon: <Shield className="h-6 w-6 text-blue-600" />,
-    title: 'Bias-Aware Scoring',
-    description: 'Fairness guardrails boost underserved borrowers by rewarding consent depth, repayment intent, and effort.'
+    title: 'Bias-Free Scoring',
+    description: 'Algorithmic fairness guardrails ensure equitable access for all applicants.',
+    className: "bg-white border border-slate-200"
   },
   {
     icon: <Users className="h-6 w-6 text-blue-600" />,
-    title: 'Partner-Ready Data Mesh',
-    description: 'Auto-ingest cooperative, SHG, and NBFC partner ledgers to enrich eligibility scoring with community insight.'
+    title: 'Partner Network',
+    description: 'Seamless integration with SHGs and NBFCs for verified community data.',
+    className: "bg-white border border-slate-200"
+  },
+  {
+    icon: <Activity className="h-6 w-6 text-blue-600" />,
+    title: 'Real-time Monitoring',
+    description: 'Continuous risk assessment and borrower health tracking.',
+    className: "bg-white border border-slate-200"
   }
 ]
 
-const intelligenceSignals = [
-  {
-    title: 'Income Stability Index',
-    description: 'Cross-checks bank flows, recharge cadence, and electricity spend to estimate reliable monthly income.',
-    icon: <BarChart3 className="h-5 w-5 text-indigo-500" />
-  },
-  {
-    title: 'Repayment Intent Score',
-    description: 'Learns from past loans, dues cleared, and partner attestations to nudge high-intent borrowers forward.',
-    icon: <HeartPulse className="h-5 w-5 text-rose-500" />
-  },
-  {
-    title: 'Community Resilience Signal',
-    description: 'Quantifies support networks from SHG savings, co-op strength, and mutual aid contributions.',
-    icon: <Users className="h-5 w-5 text-emerald-500" />
-  },
-  {
-    title: 'Purpose-fit Recommendations',
-    description: 'Matches loan plans with repayment calendars, reminding borrowers before installments to cut slip-ups.',
-    icon: <Workflow className="h-5 w-5 text-sky-500" />
-  }
+const stats = [
+  { label: 'Approval Time', value: '42m', desc: 'Median processing speed' },
+  { label: 'Fair Scores', value: '21k+', desc: 'Applicants evaluated' },
+  { label: 'Uplift', value: '+18%', desc: 'In approval rates' },
+  { label: 'Partners', value: '85+', desc: 'NBFCs & SHGs' }
 ]
-
-const journeySteps = [
-  {
-    title: 'Profile & Consent',
-    detail: 'Fill a 3-minute form, share the data sources you are comfortable with, and upload optional partner attestations.'
-  },
-  {
-    title: 'Signal Enrichment',
-    detail: 'SafeCred fuses bank trends, utility proofs, telco top-ups, and partner feeds into a transparent signal graph.'
-  },
-  {
-    title: 'Fairness Boost',
-    detail: 'Our fairness rig adjusts for income volatility, seasonal work patterns, and social disadvantage markers.'
-  },
-  {
-    title: 'Decision & Coaching',
-    detail: 'Receive your SafeCred Index, loan quantum, and a simple action plan to reduce risk and grow eligibility.'
-  }
-]
-
-const testimonials = [
-  {
-    name: 'Rajni Devi',
-    meta: 'Self Help Group Lead, Bihar',
-    quote:
-      'SafeCred finally reads the reality of irregular income. My group got approvals without pledging gold for the first time.'
-  },
-  {
-    name: 'Mahesh Chatterjee',
-    meta: 'Village Level Entrepreneur, Odisha',
-    quote:
-      'The AI narrative clearly showed how electricity bill consistency improved our SCI. Officers trusted it instantly.'
-  },
-  {
-    name: 'Ananya Rao',
-    meta: 'Credit Officer, NBCFDC Partner',
-    quote:
-      'I rely on SafeCred dashboards to triage manual reviews. Bias alerts and partner signals save hours every week.'
-  }
-]
-
-const trustedBy = ['NBCFDC', 'SHG Bharat', 'Sakhi Co-ops', 'Jan Dhan Initiative', 'Digital India Mission']
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50/40 text-slate-900 overflow-hidden">
-      <div className="relative">
-        {/* Animated background orbs */}
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl animate-pulse delay-1000" />
-          <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl floating" />
-        </div>
-
-        {/* Header */}
-        <header className="glass border-b border-white/40 sticky top-0 z-50 shadow-lg">
-          <div className="container mx-auto px-4 lg:px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-3 group">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg group-hover:shadow-blue-500/50 transition-all duration-300">
-                <Shield className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-xl font-bold gradient-text">SafeCred</span>
+    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-100">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-600 p-2 rounded-lg">
+              <Shield className="h-6 w-6 text-white" />
             </div>
-            <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-slate-700">
-              <Link className="hover:text-blue-600 transition-all duration-300 hover:scale-110" href="#features">Features</Link>
-              <Link className="hover:text-blue-600 transition-all duration-300 hover:scale-110" href="#signals">Signals</Link>
-              <Link className="hover:text-blue-600 transition-all duration-300 hover:scale-110" href="#journey">Journey</Link>
-              <Link className="hover:text-blue-600 transition-all duration-300 hover:scale-110" href="#stories">Stories</Link>
-            </nav>
-            <div className="flex items-center gap-3">
-              <Link href="/login">
-                <Button variant="ghost" className="hidden sm:inline-flex hover:bg-blue-50 transition-all">Login</Button>
-              </Link>
+            <span className="text-xl font-bold tracking-tight text-slate-900">SafeCred</span>
+          </div>
+          
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+            <Link href="#features" className="hover:text-blue-600 transition-colors">Platform</Link>
+            <Link href="#solutions" className="hover:text-blue-600 transition-colors">Solutions</Link>
+            <Link href="#impact" className="hover:text-blue-600 transition-colors">Impact</Link>
+            <Link href="#resources" className="hover:text-blue-600 transition-colors">Resources</Link>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors hidden sm:block">
+              Sign in
+            </Link>
+            <Link href="/register">
+              <Button className="bg-slate-900 hover:bg-slate-800 text-white rounded-full px-6">
+                Get Started
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 text-sm font-medium mb-8 fade-in-up">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              New: Real-time SHG Integration
+            </div>
+            
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 mb-8 leading-tight">
+              Credit scoring for the <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                modern economy
+              </span>
+            </h1>
+            
+            <p className="text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+              SafeCred empowers financial institutions to lend with confidence using AI-driven insights, alternative data, and fairness-first algorithms.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/register">
-                <Button className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  Get Started <Sparkles className="h-4 w-4 animate-pulse" />
+                <Button size="lg" className="h-14 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-lg shadow-xl shadow-blue-200 hover:shadow-2xl hover:shadow-blue-200 transition-all duration-300 w-full sm:w-auto">
+                  Start Lending <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-slate-200 hover:bg-slate-50 text-slate-700 text-lg w-full sm:w-auto">
+                  <PlayCircle className="mr-2 h-5 w-5" /> Watch Demo
                 </Button>
               </Link>
             </div>
-          </div>
-        </header>
 
-        {/* Hero Section */}
-        <section className="container mx-auto px-4 lg:px-8 pt-16 pb-24">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="fade-in-up">
-              <div className="inline-flex items-center gap-2 rounded-full glass border-gradient px-4 py-2.5 text-xs font-semibold text-blue-700 mb-6 hover:scale-105 transition-transform duration-300">
-                <CheckCircle className="h-4 w-4 text-green-600" /> 
-                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Certified by partner NBFCs & SHGs
-                </span>
-              </div>
-              <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold leading-tight text-slate-900 mb-8">
-                Smart Loans for{' '}
-                <span className="gradient-text relative inline-block">
-                  Underserved
-                  <div className="absolute -bottom-3 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full shimmer shadow-lg" />
-                  <div className="absolute -bottom-3 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full blur-sm opacity-70" />
-                </span>{' '}
-                Communities
-              </h1>
-              <p className="text-xl text-slate-600 leading-relaxed mb-10">
-                SafeCred measures creditworthiness beyond payslips by weaving together consent-led data, partner ledgers,
-                and fairness-aware AI. Every borrower receives a transparent{' '}
-                <span className="font-semibold text-blue-600">SafeCred Index</span> and actionable guidance.
-              </p>
-              <div className="flex flex-wrap gap-4 mb-14">
-                <Link href="/register">
-                  <Button size="lg" className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 text-base px-8 py-6 rounded-xl">
-                    Apply for a Loan <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <Link href="/login">
-                  <Button size="lg" variant="outline" className="border-2 border-blue-300 text-blue-700 hover:bg-blue-50 shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105 text-base px-8 py-6 rounded-xl">
-                    Track my application
-                  </Button>
-                </Link>
-              </div>
-
-              <dl className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {headlineStats.map(({ label, value, helper }, idx) => (
-                  <div 
-                    key={label} 
-                    className="glass rounded-2xl p-6 shadow-xl hover-lift glow-hover"
-                    style={{ animationDelay: `${idx * 100}ms` }}
-                  >
-                    <dt className="text-xs uppercase tracking-wider text-slate-500 font-semibold">{label}</dt>
-                    <dd className="mt-3 text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                      {value}
-                    </dd>
-                    <p className="mt-2 text-xs text-slate-600">{helper}</p>
+            {/* Hero Visual */}
+            <div className="mt-20 relative mx-auto max-w-5xl">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur opacity-20"></div>
+              <div className="relative bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                  <div className="p-8">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-green-100 rounded-xl">
+                        <TrendingUp className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm text-slate-500 font-medium">Approval Rate</p>
+                        <p className="text-2xl font-bold text-slate-900">84.2%</p>
+                      </div>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-green-500 w-[84%]"></div>
+                    </div>
                   </div>
-                ))}
-              </dl>
-            </div>
-
-            <div className="relative fade-in floating">
-              <div className="absolute inset-0 -z-10 rounded-[2.5rem] bg-gradient-to-br from-blue-400 via-indigo-400 to-purple-400 blur-3xl opacity-30 animate-pulse" />
-              <div className="relative glass rounded-[2.5rem] p-8 shadow-2xl border-gradient">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="space-y-2">
-                    <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Live SafeCred Index</p>
-                    <div className="text-5xl font-black gradient-text">82.4</div>
-                    <div className="flex gap-1 mt-2">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className={`h-1.5 w-8 rounded-full ${i < 4 ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-slate-200'}`} />
+                  <div className="p-8">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-blue-100 rounded-xl">
+                        <Users className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm text-slate-500 font-medium">Active Borrowers</p>
+                        <p className="text-2xl font-bold text-slate-900">12,450</p>
+                      </div>
+                    </div>
+                    <div className="flex -space-x-2">
+                      {[1,2,3,4].map(i => (
+                        <div key={i} className="h-8 w-8 rounded-full bg-slate-200 border-2 border-white"></div>
                       ))}
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-4 shadow-lg pulse-glow">
-                    <BarChart3 className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                
-                <div className="space-y-5 mb-8">
-                  {[
-                    { label: 'Consent depth', value: 'High', color: 'text-green-600' },
-                    { label: 'Repayment intent', value: 'Verified', color: 'text-blue-600' },
-                    { label: 'Partner confidence', value: '92%', color: 'text-purple-600' }
-                  ].map(({ label, value, color }) => (
-                    <div key={label} className="flex items-center justify-between p-3 rounded-xl hover:bg-blue-50/50 transition-colors duration-300">
-                      <span className="text-sm text-slate-600 font-medium">{label}</span>
-                      <span className={`font-bold ${color} text-base`}>{value}</span>
+                  <div className="p-8">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 bg-purple-100 rounded-xl">
+                        <Shield className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm text-slate-500 font-medium">Risk Score</p>
+                        <p className="text-2xl font-bold text-slate-900">Low</p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-                
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-100 via-blue-100 to-purple-100 p-6 shadow-inner">
-                  <div className="absolute inset-0 shimmer" />
-                  <p className="relative text-sm text-slate-700 italic leading-relaxed">
-                    &quot;Explainable AI pulled our SHG repayment logs automatically and highlighted loyalty bonuses.&quot;
-                  </p>
-                  <div className="mt-3 flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500" />
-                    <div>
-                      <p className="text-xs font-semibold text-slate-800">Verified User</p>
-                      <p className="text-xs text-slate-500">SHG Member</p>
+                    <div className="flex gap-1">
+                      <div className="h-2 w-full bg-green-500 rounded-full"></div>
+                      <div className="h-2 w-full bg-green-500 rounded-full"></div>
+                      <div className="h-2 w-full bg-green-500 rounded-full"></div>
+                      <div className="h-2 w-full bg-slate-200 rounded-full"></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Trust Banner */}
-        <section className="border-y border-blue-200/50 glass py-8 relative overflow-hidden">
-          <div className="absolute inset-0 shimmer opacity-20" />
-          <div className="container mx-auto px-4 lg:px-8 relative z-10">
-            <div className="flex flex-col items-center gap-6 md:flex-row md:justify-between text-sm font-medium">
-              <span className="uppercase tracking-[0.3em] gradient-text font-bold text-sm">
-                Trusted by inclusive finance leaders
-              </span>
-              <div className="flex flex-wrap items-center gap-8 text-slate-500">
-                {trustedBy.map(org => (
-                  <span 
-                    key={org} 
-                    className="hover:text-blue-600 transition-all duration-300 hover:scale-110 font-medium cursor-pointer"
-                  >
-                    {org}
-                  </span>
-                ))}
-              </div>
-            </div>
+      {/* Social Proof */}
+      <section className="py-10 border-y border-slate-100 bg-slate-50/50">
+        <div className="container mx-auto px-6">
+          <p className="text-center text-sm font-semibold text-slate-500 uppercase tracking-wider mb-8">Trusted by industry leaders</p>
+          <div className="flex flex-wrap justify-center items-center gap-12 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+            {['NBCFDC', 'Digital India', 'SHG Bharat', 'FinTech Association', 'Global Alliance'].map((brand) => (
+              <span key={brand} className="text-xl font-bold text-slate-800">{brand}</span>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features */}
-        <section id="features" className="py-24">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-3xl mx-auto text-center mb-16 fade-in-up">
-              <div className="inline-block px-4 py-2 bg-blue-100 rounded-full text-blue-700 font-semibold text-sm mb-4">
-                Platform Capabilities
-              </div>
-              <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">
-                Designed for fair, fast,{' '}
-                <span className="gradient-text">community-first</span> lending
-              </h2>
-              <p className="text-lg text-slate-600 leading-relaxed">
-                SafeCred brings underwriting, fairness analytics, and borrower coaching onto a single collaborative workspace.
-              </p>
-            </div>
-            <div className="grid gap-8 md:grid-cols-3">
-              {features.map((feature, idx) => (
-                <div 
-                  key={feature.title} 
-                  className="group glass rounded-3xl p-8 shadow-xl hover-lift glow-hover cursor-pointer border-gradient"
-                  style={{ animationDelay: `${idx * 150}ms` }}
-                >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-                    <div className="text-white">{feature.icon}</div>
-                  </div>
-                  <h3 className="mt-6 text-2xl font-bold text-slate-900 group-hover:gradient-text transition-all duration-300">
-                    {feature.title}
-                  </h3>
-                  <p className="mt-4 text-base text-slate-600 leading-relaxed">{feature.description}</p>
-                  <div className="mt-6 inline-flex items-center text-blue-600 font-semibold group-hover:gap-2 transition-all duration-300">
-                    Learn more
-                    <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-2 transition-transform duration-300" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Intelligence Signals */}
-        <section id="signals" className="relative py-24 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-white via-blue-50/50 to-indigo-50/50" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-300/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-300/20 rounded-full blur-3xl" />
-          
-          <div className="container mx-auto px-4 lg:px-8 relative z-10">
-            <div className="max-w-3xl mb-16 fade-in-up">
-              <div className="inline-block px-4 py-2 bg-indigo-100 rounded-full text-indigo-700 font-semibold text-sm mb-4">
-                AI-Powered Intelligence
-              </div>
-              <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">
-                Signals that see <span className="gradient-text">beyond paperwork</span>
-              </h2>
-              <p className="text-lg text-slate-600 leading-relaxed">
-                Traditional credit reports miss the resilience of informal workers. SafeCred reconstructs the borrower story using
-                consents they control and data they trust.
-              </p>
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-              {intelligenceSignals.map((signal, idx) => (
-                <div 
-                  key={signal.title} 
-                  className="group glass rounded-3xl p-8 shadow-lg hover-lift relative overflow-hidden"
-                  style={{ animationDelay: `${idx * 100}ms` }}
-                >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-200/30 to-transparent rounded-bl-full" />
-                  <div className="relative z-10">
-                    <div className="mb-5 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2.5 border border-blue-200/50 shadow-sm">
-                      <div className="p-1.5 bg-white rounded-lg shadow-sm">{signal.icon}</div>
-                      <span className="text-sm font-bold text-blue-700">Insight</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors duration-300">
-                      {signal.title}
-                    </h3>
-                    <p className="text-base text-slate-600 leading-relaxed">{signal.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Journey */}
-        <section id="journey" className="py-24 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-white to-slate-50" />
-          <div className="container mx-auto px-4 lg:px-8 relative z-10">
-            <div className="grid lg:grid-cols-12 gap-16">
-              <div className="lg:col-span-4 fade-in-up">
-                <span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-100 to-indigo-100 px-4 py-2.5 text-sm font-bold text-blue-700 shadow-sm">
-                  <Globe2 className="h-5 w-5" /> Borrower-First Flow
-                </span>
-                <h2 className="mt-6 text-4xl font-extrabold text-slate-900 leading-tight">
-                  From application to disbursal in{' '}
-                  <span className="gradient-text">four guided steps</span>
-                </h2>
-                <p className="mt-6 text-lg text-slate-600 leading-relaxed">
-                  Each decision is backed by audit trails, human overrides, and a fairness reviewer tab for loan officers.
-                </p>
-              </div>
-              <div className="lg:col-span-8 space-y-6">
-                {journeySteps.map((step, index) => (
-                  <div 
-                    key={step.title} 
-                    className="group relative flex gap-6 glass rounded-3xl p-8 shadow-lg hover-lift"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    {index < journeySteps.length - 1 && (
-                      <div className="absolute -left-6 top-20 hidden h-full border-l-2 border-dashed border-blue-300 lg:block" />
-                    )}
-                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-xl shadow-lg group-hover:shadow-2xl group-hover:scale-110 transition-all duration-300">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold text-slate-900 group-hover:gradient-text transition-all duration-300">
-                        {step.title}
-                      </h3>
-                      <p className="mt-3 text-base text-slate-600 leading-relaxed">{step.detail}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Testimonials */}
-        <section id="stories" className="bg-white py-20">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-3xl font-bold text-slate-900">Stories of progress powered by SafeCred</h2>
-              <p className="mt-4 text-slate-600">
-                Borrowers, collectives, and officers share how fairness-aware scoring unlocked access to credit, faster.
-              </p>
-            </div>
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {testimonials.map(testimonial => (
-                <div key={testimonial.name} className="rounded-2xl border border-blue-100 bg-gradient-to-b from-white to-blue-50/40 p-6 shadow-sm">
-                  <p className="text-sm leading-relaxed text-slate-600">“{testimonial.quote}”</p>
-                  <div className="mt-6 font-semibold text-slate-900">{testimonial.name}</div>
-                  <div className="text-xs uppercase tracking-wide text-blue-600">{testimonial.meta}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="relative py-20">
-          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-600 via-indigo-600 to-slate-900" />
-          <div className="container mx-auto px-4 lg:px-8 text-center text-white">
-            <h2 className="text-3xl font-semibold">Ready to unlock responsible credit for your community?</h2>
-            <p className="mt-4 text-blue-100 max-w-2xl mx-auto">
-              Collaborate with SafeCred to run targeted outreach, manage manual reviews, and build a transparent credit ladder for informal workers.
+      {/* Features Grid */}
+      <section id="features" className="py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="mb-16 max-w-2xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+              Everything you need to scale <br />
+              <span className="text-blue-600">inclusive lending</span>
+            </h2>
+            <p className="text-lg text-slate-600">
+              Our platform combines traditional credit metrics with alternative data points to build a complete financial identity.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link href="/register">
-                <Button size="lg" variant="secondary" className="gap-2 h-14 px-8 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  Join the movement <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/login">
-                <Button size="lg" className="border-2 border-white bg-white/10 text-white hover:bg-white hover:text-slate-900 backdrop-blur-sm h-14 px-8 text-base font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  Continue as credit officer
-                </Button>
-              </Link>
-            </div>
           </div>
-        </section>
 
-        {/* Footer */}
-        <footer className="bg-slate-950 text-slate-300 py-14">
-          <div className="container mx-auto px-4 lg:px-8">
-            <div className="grid gap-10 md:grid-cols-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Shield className="h-6 w-6 text-blue-400" />
-                  <span className="text-lg font-semibold text-white">SafeCred</span>
-                </div>
-                <p className="mt-4 text-sm text-slate-400 leading-relaxed">
-                  AI-assisted credit scoring built with fairness constraints and explainability for inclusive finance.
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, idx) => (
+              <div 
+                key={idx} 
+                className={`p-8 rounded-3xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${feature.className}`}
+              >
+                <div className="mb-6">{feature.icon}</div>
+                <h3 className={`text-xl font-bold mb-3 ${feature.className.includes('text-white') ? 'text-white' : 'text-slate-900'}`}>
+                  {feature.title}
+                </h3>
+                <p className={`leading-relaxed ${feature.className.includes('text-white') ? 'text-blue-100' : 'text-slate-600'}`}>
+                  {feature.description}
                 </p>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-white">Product</h4>
-                <ul className="mt-4 space-y-2 text-sm text-slate-400">
-                  <li><Link href="#features">Platform Overview</Link></li>
-                  <li><Link href="#signals">Data Signals</Link></li>
-                  <li><Link href="#journey">Borrower Journey</Link></li>
-                </ul>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+          <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+            {stats.map((stat, idx) => (
+              <div key={idx} className="space-y-2">
+                <div className="text-4xl md:text-5xl font-bold tracking-tight">{stat.value}</div>
+                <div className="text-lg font-medium text-blue-200">{stat.label}</div>
+                <div className="text-sm text-slate-400">{stat.desc}</div>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-white">Company</h4>
-                <ul className="mt-4 space-y-2 text-sm text-slate-400">
-                  <li><Link href="#stories">Impact Stories</Link></li>
-                  <li><Link href="#">Partners</Link></li>
-                  <li><Link href="#">Governance</Link></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold uppercase tracking-wide text-white">Contact</h4>
-                <p className="mt-4 text-sm text-slate-400">
-                  Email: support@safecred.com<br />
-                  Phone: 1800-XXX-XXXX<br />
-                  Digital India Mission, New Delhi
-                </p>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Integration/Workflow Section */}
+      <section id="solutions" className="py-24 bg-slate-50">
+        <div className="container mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+                Seamless integration with your existing workflow
+              </h2>
+              <p className="text-lg text-slate-600 mb-8">
+                Connect SafeCred to your core banking system or use our dashboard as a standalone solution. We support all major protocols.
+              </p>
+              
+              <div className="space-y-6">
+                {[
+                  { title: 'API-First Design', desc: 'RESTful endpoints for instant credit checks.' },
+                  { title: 'Bank-Grade Security', desc: 'AES-256 encryption and SOC2 compliance.' },
+                  { title: 'Custom Models', desc: 'Train scoring models on your specific population data.' }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex gap-4">
+                    <div className="mt-1 bg-blue-100 p-2 rounded-lg h-fit">
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-slate-900">{item.title}</h4>
+                      <p className="text-slate-600">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="mt-10 border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
-              &copy; {new Date().getFullYear()} SafeCred. Built with empathy for Smart India Hackathon.
+            
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl transform rotate-3 opacity-10"></div>
+              <div className="bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 relative">
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <span className="font-mono text-sm text-slate-500">POST /api/v1/score</span>
+                    <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-bold rounded">200 OK</span>
+                  </div>
+                  <div className="font-mono text-sm text-slate-600 space-y-2">
+                    <div className="text-purple-600">{`{`}</div>
+                    <div className="pl-4">
+                      <span className="text-blue-600">"applicant_id"</span>: <span className="text-orange-600">"usr_8923"</span>,
+                    </div>
+                    <div className="pl-4">
+                      <span className="text-blue-600">"credit_score"</span>: <span className="text-green-600">785</span>,
+                    </div>
+                    <div className="pl-4">
+                      <span className="text-blue-600">"risk_level"</span>: <span className="text-orange-600">"low"</span>,
+                    </div>
+                    <div className="pl-4">
+                      <span className="text-blue-600">"recommended_limit"</span>: <span className="text-green-600">50000</span>
+                    </div>
+                    <div className="text-purple-600">{`}`}</div>
+                  </div>
+                  <div className="pt-4">
+                    <Button variant="outline" className="w-full">View Documentation</Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="bg-blue-600 rounded-[2.5rem] p-12 md:p-24 text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-full z-0">
+               <div className="absolute top-[-50%] left-[-10%] w-[600px] h-[600px] bg-white/10 rounded-full blur-3xl"></div>
+               <div className="absolute bottom-[-50%] right-[-10%] w-[600px] h-[600px] bg-indigo-900/20 rounded-full blur-3xl"></div>
+            </div>
+            
+            <div className="relative z-10 max-w-3xl mx-auto">
+              <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+                Ready to transform your lending process?
+              </h2>
+              <p className="text-xl text-blue-100 mb-12">
+                Join forward-thinking institutions using SafeCred to reach the next billion borrowers.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Link href="/register">
+                  <Button size="lg" className="h-14 px-8 rounded-full bg-white text-blue-600 hover:bg-blue-50 text-lg font-bold w-full sm:w-auto">
+                    Get Started Now
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-blue-400 text-white hover:bg-blue-700 hover:text-white text-lg w-full sm:w-auto">
+                    Contact Sales
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-16">
+            <div className="col-span-2 lg:col-span-2">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="bg-blue-600 p-2 rounded-lg">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-slate-900">SafeCred</span>
+              </div>
+              <p className="text-slate-500 leading-relaxed max-w-xs">
+                Making credit accessible, fair, and transparent for everyone through the power of artificial intelligence.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-bold text-slate-900 mb-6">Platform</h4>
+              <ul className="space-y-4 text-sm text-slate-600">
+                <li><Link href="#" className="hover:text-blue-600">Features</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Security</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Enterprise</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Pricing</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-bold text-slate-900 mb-6">Company</h4>
+              <ul className="space-y-4 text-sm text-slate-600">
+                <li><Link href="#" className="hover:text-blue-600">About Us</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Careers</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Blog</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Contact</Link></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-bold text-slate-900 mb-6">Legal</h4>
+              <ul className="space-y-4 text-sm text-slate-600">
+                <li><Link href="#" className="hover:text-blue-600">Privacy Policy</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Terms of Service</Link></li>
+                <li><Link href="#" className="hover:text-blue-600">Cookie Policy</Link></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-slate-500">© {new Date().getFullYear()} SafeCred Inc. All rights reserved.</p>
+            <div className="flex gap-6">
+              {/* Social icons would go here */}
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
