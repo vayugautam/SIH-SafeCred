@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/store/authStore'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { FileUpload, UploadedFile } from '@/components/ui/file-upload'
@@ -21,17 +21,13 @@ const DOCUMENT_TYPES = [
 
 export default function DocumentsPage() {
   const router = useRouter()
-  const { user, token } = useAuthStore()
+  const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
   const [documents, setDocuments] = useState<Record<string, UploadedFile[]>>({})
 
   const loadDocuments = useCallback(async () => {
     try {
-      const response = await fetch('/api/documents', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await fetch('/api/documents')
 
       if (!response.ok) throw new Error('Failed to load documents')
 
@@ -39,12 +35,14 @@ export default function DocumentsPage() {
       
       // Group documents by type
       const grouped: Record<string, UploadedFile[]> = {}
-      data.documents.forEach((doc: UploadedFile) => {
-        if (!grouped[doc.documentType]) {
-          grouped[doc.documentType] = []
-        }
-        grouped[doc.documentType].push(doc)
-      })
+      if (data.documents && Array.isArray(data.documents)) {
+        data.documents.forEach((doc: UploadedFile) => {
+          if (!grouped[doc.documentType]) {
+            grouped[doc.documentType] = []
+          }
+          grouped[doc.documentType].push(doc)
+        })
+      }
 
       setDocuments(grouped)
     } catch (error) {
@@ -52,16 +50,18 @@ export default function DocumentsPage() {
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [])
 
   useEffect(() => {
-    if (!token || !user) {
+    if (status === 'unauthenticated') {
       router.push('/login')
       return
     }
 
-    loadDocuments()
-  }, [token, user, router, loadDocuments])
+    if (status === 'authenticated') {
+      loadDocuments()
+    }
+  }, [status, router, loadDocuments])
 
   const handleUploadComplete = (documentType: string, file: UploadedFile) => {
     setDocuments(prev => ({
@@ -70,7 +70,7 @@ export default function DocumentsPage() {
     }))
   }
 
-  if (loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
