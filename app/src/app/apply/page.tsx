@@ -1,4 +1,3 @@
-// app/src/app/apply/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -12,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Loader2, CheckCircle, AlertTriangle, XCircle, Clock, Sparkles, ArrowRight, ArrowLeft, TrendingUp, FileText, DollarSign, Calendar, Info } from 'lucide-react'
+import { Shield, Loader2, CheckCircle, AlertTriangle, XCircle, Clock, Sparkles, ArrowRight, ArrowLeft, TrendingUp, FileText, DollarSign, Calendar, Info, LayoutDashboard, User, Settings, LogOut } from 'lucide-react'
 import { formatCurrency, formatPercent, formatNumber } from '@/lib/utils'
 
 const createInitialFormState = () => ({
@@ -69,28 +68,28 @@ const STATUS_META = {
     title: 'Application Approved',
     circleBg: 'bg-green-100',
     iconColor: 'text-green-600',
-    banner: 'bg-green-50 text-green-700',
+    banner: 'bg-green-50 text-green-700 border-green-200',
     icon: CheckCircle,
   },
   manual_review: {
     title: 'Application Under Manual Review',
     circleBg: 'bg-yellow-100',
     iconColor: 'text-yellow-600',
-    banner: 'bg-yellow-50 text-yellow-700',
+    banner: 'bg-yellow-50 text-yellow-700 border-yellow-200',
     icon: AlertTriangle,
   },
   rejected: {
     title: 'Application Not Approved',
     circleBg: 'bg-red-100',
     iconColor: 'text-red-600',
-    banner: 'bg-red-50 text-red-700',
+    banner: 'bg-red-50 text-red-700 border-red-200',
     icon: XCircle,
   },
   default: {
     title: 'Application Submitted',
     circleBg: 'bg-blue-100',
     iconColor: 'text-blue-600',
-    banner: 'bg-blue-50 text-blue-700',
+    banner: 'bg-blue-50 text-blue-700 border-blue-200',
     icon: Clock,
   },
 } as const
@@ -160,23 +159,10 @@ export default function ApplyPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
-        
-        <div className="text-center relative z-10">
-          <div className="mb-6 flex justify-center">
-            <div className="p-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-2xl">
-              <Shield className="h-16 w-16 text-white animate-pulse" />
-            </div>
-          </div>
-          <p className="text-xl text-slate-700 font-semibold">Loading application form...</p>
-          <div className="mt-4 flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4">
+          <div className="mx-auto w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-600 font-medium">Loading application form...</p>
         </div>
       </div>
     )
@@ -516,69 +502,88 @@ export default function ApplyPage() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
-        <header className="bg-white/80 backdrop-blur border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 text-lg font-semibold text-blue-700">
-              <Shield className="h-6 w-6" />
-              SafeCred
-            </Link>
-            <Link href="/dashboard" className="text-sm text-blue-600 hover:text-blue-700">
-              View dashboard
-            </Link>
+      <div className="min-h-screen bg-slate-50">
+        <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex items-center gap-8">
+                <Link href="/" className="flex items-center gap-2">
+                  <div className="bg-blue-600 p-1.5 rounded-lg">
+                    <Shield className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-slate-900">SafeCred</span>
+                </Link>
+                <div className="hidden md:flex items-center gap-6">
+                  <Link href="/dashboard" className="text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => router.push('/api/auth/signout')}
+                  className="text-slate-600 hover:text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-        </header>
+        </nav>
 
         <main className="container mx-auto px-4 py-10 max-w-5xl">
-          <Card className="border-2">
-            <CardHeader className="text-center pb-8">
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="text-center pb-8 border-b border-slate-100 bg-slate-50/50">
               <div className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full ${statusMeta.circleBg}`}>
                 <StatusIcon className={`h-10 w-10 ${statusMeta.iconColor}`} />
               </div>
-              <CardTitle className="text-3xl mb-2">{statusMeta.title}</CardTitle>
-              <CardDescription className="text-base text-gray-600 max-w-2xl mx-auto">
+              <CardTitle className="text-3xl mb-2 text-slate-900">{statusMeta.title}</CardTitle>
+              <CardDescription className="text-base text-slate-600 max-w-2xl mx-auto">
                 {message}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8">
+            <CardContent className="space-y-8 pt-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Application ID</p>
-                  <p className="mt-1 font-semibold text-gray-800">{mlResult.applicationId || application.applicationId}</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Application ID</p>
+                  <p className="mt-1 font-semibold text-slate-900">{mlResult.applicationId || application.applicationId}</p>
                 </div>
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Loan offer</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Loan offer</p>
                   <p className="mt-1 font-semibold text-green-600">{loanOffer ? formatCurrency(loanOffer) : 'Pending'}</p>
                 </div>
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">SafeCred Index</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">SafeCred Index</p>
                   <p className="mt-1 font-semibold text-blue-700">{finalSci !== null ? `${finalSci.toFixed(1)}/100` : 'Awaiting'}</p>
                 </div>
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Risk band</p>
-                  <p className="mt-1 font-semibold text-gray-800">{riskBand}</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Risk band</p>
+                  <p className="mt-1 font-semibold text-slate-900">{riskBand}</p>
                   {riskCategory && (
-                    <p className="text-xs text-gray-500">{riskCategory}</p>
+                    <p className="text-xs text-slate-500">{riskCategory}</p>
                   )}
                 </div>
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">ML confidence</p>
-                  <p className="mt-1 font-semibold text-gray-800">{mlProbability !== null ? formatPercent(mlProbability, 1) : '—'}</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">ML confidence</p>
+                  <p className="mt-1 font-semibold text-slate-900">{mlProbability !== null ? formatPercent(mlProbability, 1) : '—'}</p>
                 </div>
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                  <p className="text-xs uppercase tracking-wide text-gray-500">Composite score</p>
-                  <p className="mt-1 font-semibold text-gray-800">{compositeScore !== null ? formatNumber(compositeScore, 1) : '—'}</p>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Composite score</p>
+                  <p className="mt-1 font-semibold text-slate-900">{compositeScore !== null ? formatNumber(compositeScore, 1) : '—'}</p>
                 </div>
                 {loanToIncome !== null && (
-                  <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Loan-to-income</p>
-                    <p className="mt-1 font-semibold text-gray-800">{loanToIncome.toFixed(2)}x</p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Loan-to-income</p>
+                    <p className="mt-1 font-semibold text-slate-900">{loanToIncome.toFixed(2)}x</p>
                   </div>
                 )}
                 {needCategory && (
-                  <div className="rounded-lg border bg-gray-50 px-4 py-3 text-left">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Need category</p>
-                    <p className="mt-1 font-semibold text-gray-800">{needCategory}</p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Need category</p>
+                    <p className="mt-1 font-semibold text-slate-900">{needCategory}</p>
                   </div>
                 )}
               </div>
@@ -588,18 +593,18 @@ export default function ApplyPage() {
                   <Badge
                     key={consent.label}
                     variant={consent.value ? 'success' : 'outline'}
-                    className={consent.value ? '' : 'text-gray-500'}
+                    className={consent.value ? '' : 'text-slate-500 border-slate-200'}
                   >
                     {consent.value ? 'Granted' : 'Pending'} · {consent.label}
                   </Badge>
                 ))}
                 {alternativeProxiesBlocked && (
-                  <Badge variant="info" className="bg-blue-100 text-blue-700">
+                  <Badge variant="info" className="bg-blue-50 text-blue-700 border-blue-200">
                     Alternative proxies locked for this track
                   </Badge>
                 )}
                 {consentBonus !== null && consentBonus > 0 && (
-                  <Badge variant="secondary" className="text-green-700">
+                  <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                     Consent bonus: +₹{consentBonus.toLocaleString('en-IN')}
                   </Badge>
                 )}
@@ -609,17 +614,17 @@ export default function ApplyPage() {
                 {message}
               </div>
 
-              <div className="rounded-xl border bg-white/70 p-6 space-y-6">
+              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-6 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800">Fairness insights</h3>
-                    <p className="text-sm text-gray-500">
+                    <h3 className="text-lg font-semibold text-slate-900">Fairness insights</h3>
+                    <p className="text-sm text-slate-500">
                       {alternativeProxiesBlocked
                         ? 'Repayment performance drove this decision; alternative proxies are intentionally disabled for high-income tracks.'
                         : 'Composite scoring balanced ML confidence with consent depth and income relief.'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <div className="flex items-center gap-2 text-sm text-blue-600 font-medium">
                     <Sparkles className="h-4 w-4" />
                     Inclusive lending safeguards applied
                   </div>
@@ -627,39 +632,39 @@ export default function ApplyPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Consent depth</p>
-                    <p className="mt-1 font-semibold text-gray-800">{formatPercent(consentDepthDisplay, 0)}</p>
-                    <div className="mt-2 h-2 rounded-full bg-gray-200">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Consent depth</p>
+                    <p className="mt-1 font-semibold text-slate-900">{formatPercent(consentDepthDisplay, 0)}</p>
+                    <div className="mt-2 h-2 rounded-full bg-slate-200">
                       <div
-                        className="h-2 rounded-full bg-blue-500"
+                        className="h-2 rounded-full bg-blue-600"
                         style={{ width: `${Math.min(100, Math.max(0, consentDepthDisplay * 100))}%` }}
                       />
                     </div>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Fair lending bonus</p>
-                    <p className="mt-1 font-semibold text-gray-800">{(fairnessBonus * 100).toFixed(0)} pts</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Fair lending bonus</p>
+                    <p className="mt-1 font-semibold text-slate-900">{(fairnessBonus * 100).toFixed(0)} pts</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Income relief applied</p>
-                    <p className="mt-1 font-semibold text-gray-800">{(incomeRelief * 100).toFixed(0)} pts</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Income relief applied</p>
+                    <p className="mt-1 font-semibold text-slate-900">{(incomeRelief * 100).toFixed(0)} pts</p>
                   </div>
                   {featuresExtracted !== null && (
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Signals analysed</p>
-                      <p className="mt-1 font-semibold text-gray-800">{featuresExtracted}</p>
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Signals analysed</p>
+                      <p className="mt-1 font-semibold text-slate-900">{featuresExtracted}</p>
                     </div>
                   )}
                 </div>
 
                 {Object.keys(pillarScores).length > 0 && (
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-500 mb-2">Pillar contribution</p>
+                    <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">Pillar contribution</p>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {Object.entries(pillarScores).map(([pillar, value]) => (
-                        <div key={pillar} className="rounded-md border bg-gray-50 px-3 py-2">
-                          <p className="text-xs uppercase text-gray-400">{pillar}</p>
-                          <p className="font-semibold text-gray-700">{formatPercent(value, 0)}</p>
+                        <div key={pillar} className="rounded-md border border-slate-200 bg-white px-3 py-2">
+                          <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">{pillar}</p>
+                          <p className="font-semibold text-slate-700">{formatPercent(value, 0)}</p>
                         </div>
                       ))}
                     </div>
@@ -667,16 +672,16 @@ export default function ApplyPage() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-md border bg-gray-50 px-4 py-3">
-                    <p className="text-xs uppercase tracking-wide text-gray-500">Score blend</p>
-                    <p className="text-sm text-gray-600 mt-2">
+                  <div className="rounded-md border border-slate-200 bg-white px-4 py-3">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Score blend</p>
+                    <p className="text-sm text-slate-600 mt-2">
                       ML weight {formatPercent(combineDetails.ml_weight ?? 0, 0)} &middot; Composite weight {formatPercent(combineDetails.composite_weight ?? 0, 0)}
                     </p>
                   </div>
                   {loanToIncome !== null && (
-                    <div className="rounded-md border bg-gray-50 px-4 py-3">
-                      <p className="text-xs uppercase tracking-wide text-gray-500">Loan affordability</p>
-                      <p className="text-sm text-gray-600 mt-2">
+                    <div className="rounded-md border border-slate-200 bg-white px-4 py-3">
+                      <p className="text-xs uppercase tracking-wide text-slate-500">Loan affordability</p>
+                      <p className="text-sm text-slate-600 mt-2">
                         Loan-to-income ratio {loanToIncome.toFixed(2)}x {loanToIncome <= 0.6 ? '(within comfort range)' : '(requires officer review)'}
                       </p>
                     </div>
@@ -684,7 +689,7 @@ export default function ApplyPage() {
                 </div>
 
                 {fairnessInsights.length > 0 && (
-                  <ul className="space-y-2 text-sm text-gray-600 list-disc list-inside">
+                  <ul className="space-y-2 text-sm text-slate-600 list-disc list-inside">
                     {fairnessInsights.map((note) => (
                       <li key={note}>{note}</li>
                     ))}
@@ -694,7 +699,7 @@ export default function ApplyPage() {
 
               <div className="flex flex-col md:flex-row gap-3 pt-2">
                 <Link href="/dashboard" className="flex-1">
-                  <Button className="w-full" size="lg">Go to dashboard</Button>
+                  <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white" size="lg">Go to dashboard</Button>
                 </Link>
                 <Button
                   variant="outline"
@@ -708,7 +713,7 @@ export default function ApplyPage() {
             </CardContent>
           </Card>
 
-          <p className="mt-6 text-xs text-gray-500 text-center">
+          <p className="mt-6 text-xs text-slate-500 text-center">
             Income is re-verified with NBCFDC. A mismatch greater than 10% will pause disbursal until rectified.
           </p>
         </main>
@@ -727,43 +732,53 @@ export default function ApplyPage() {
   const consentDepthPreview = consentsSelected / totalConsentSlots
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
-      {/* Animated background orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-      </div>
-
-      <header className="glass border-b border-white/50 sticky top-0 z-10 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-              <Shield className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-slate-50">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="bg-blue-600 p-1.5 rounded-lg">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-slate-900">SafeCred</span>
+              </Link>
+              <div className="hidden md:flex items-center gap-6">
+                <Link href="/dashboard" className="text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </div>
             </div>
-            <span className="text-2xl font-bold gradient-text">SafeCred</span>
-          </Link>
-          <Link href="/dashboard" className="text-sm font-semibold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text hover:from-blue-700 hover:to-purple-700 transition-all flex items-center gap-2 group">
-            <ArrowLeft className="h-4 w-4 text-blue-600 group-hover:-translate-x-1 transition-transform" />
-            Back to dashboard
-          </Link>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => router.push('/api/auth/signout')}
+                className="text-slate-600 hover:text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </div>
-      </header>
+      </nav>
 
       <main className="container mx-auto px-4 py-10 max-w-6xl relative z-10">
         <div className="grid gap-6 lg:grid-cols-[2fr,1fr]">
-          <Card className="glass border-gradient shadow-2xl fade-in-up">
-            <CardHeader>
-              <CardTitle className="text-3xl gradient-text flex items-center gap-3">
-                <FileText className="h-8 w-8 text-blue-600" />
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="border-b border-slate-100 bg-slate-50/50">
+              <CardTitle className="text-2xl text-slate-900 flex items-center gap-3">
+                <FileText className="h-6 w-6 text-blue-600" />
                 Submit Loan Application
               </CardTitle>
-              <CardDescription className="text-base mt-2">
+              <CardDescription className="text-base mt-2 text-slate-600">
                 Share your income details and choose which data sources you consent to share. More consents unlock higher fairness bonuses and faster decisions.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {error && (
-                <div className="mb-6 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 px-4 py-3 text-sm text-red-700 shadow-md slide-in-from-top">
+                <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   <strong className="font-semibold">Error:</strong> {error}
                 </div>
               )}
@@ -771,9 +786,9 @@ export default function ApplyPage() {
               <form onSubmit={handleSubmit} className="space-y-8">
                 {currentStep === 'income' && (
                   <>
-                    <section className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200">
-                      <h3 className="text-2xl font-bold gradient-text mb-6 flex items-center gap-3">
-                        <DollarSign className="h-7 w-7 text-blue-600" />
+                    <section className="p-6 rounded-xl bg-blue-50/50 border border-blue-100">
+                      <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <DollarSign className="h-5 w-5 text-blue-600" />
                         Loan Request Details
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -787,13 +802,13 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="e.g. 12000"
-                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
+                            className="h-11"
                             value={formData.declaredIncome}
                             onChange={(e) => setFormData((prev) => ({ ...prev, declaredIncome: e.target.value }))}
                             disabled={isLoading}
                             required
                           />
-                          <p className="mt-2 text-xs text-slate-600 flex items-start gap-1">
+                          <p className="mt-2 text-xs text-slate-500 flex items-start gap-1">
                             <Info className="h-3 w-3 mt-0.5 flex-shrink-0" />
                             We cross-verify this with NBCFDC. Accurate declarations route you to the correct evaluation pathway.
                           </p>
@@ -809,7 +824,7 @@ export default function ApplyPage() {
                             min="1000"
                             max="100000"
                             placeholder="e.g. 20000"
-                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
+                            className="h-11"
                             value={formData.loanAmount}
                             onChange={(e) => setFormData((prev) => ({ ...prev, loanAmount: e.target.value }))}
                             disabled={isLoading}
@@ -826,7 +841,7 @@ export default function ApplyPage() {
                             type="number"
                             min="3"
                             max="36"
-                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
+                            className="h-11"
                             value={formData.tenureMonths}
                             onChange={(e) => setFormData((prev) => ({ ...prev, tenureMonths: e.target.value }))}
                             disabled={isLoading}
@@ -842,7 +857,7 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="Optional"
-                            className="h-12 border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
+                            className="h-11"
                             value={formData.existingLoanAmount}
                             onChange={(e) => setFormData((prev) => ({ ...prev, existingLoanAmount: e.target.value }))}
                             disabled={isLoading}
@@ -854,7 +869,7 @@ export default function ApplyPage() {
                         <Textarea
                           id="purpose"
                           placeholder="Tell us how this loan will be used"
-                          className="border-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300 rounded-xl"
+                          className="min-h-[80px]"
                           value={formData.purpose}
                           onChange={(e) => setFormData((prev) => ({ ...prev, purpose: e.target.value }))}
                           disabled={isLoading}
@@ -863,14 +878,14 @@ export default function ApplyPage() {
                       </div>
                     </section>
 
-                    <section className="border-t-2 pt-6">
-                      <h3 className="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2">
+                    <section className="border-t border-slate-200 pt-6">
+                      <h3 className="text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
                         <Info className="h-5 w-5 text-blue-600" />
                         Why We Ask for Income First
                       </h3>
-                      <div className="rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 shadow-md">
-                        <p className="font-semibold text-lg text-blue-900">Income Barrier: ₹{incomeBarrier.toLocaleString('en-IN')}</p>
-                        <p className="mt-3 text-sm text-slate-700 leading-relaxed">
+                      <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+                        <p className="font-semibold text-sm text-blue-900">Income Barrier: ₹{incomeBarrier.toLocaleString('en-IN')}</p>
+                        <p className="mt-2 text-sm text-slate-600 leading-relaxed">
                           Applicants below the barrier unlock fairness boosts and alternative proxies. Applicants above the barrier are evaluated strictly on
                           repayment history and bank evidence. Continue to proceed to your tailored experience.
                         </p>
@@ -881,18 +896,18 @@ export default function ApplyPage() {
                       <Button
                         type="button"
                         size="lg"
-                        className="flex-1 h-14 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                         disabled={isLoading}
                         onClick={handleIncomeStepContinue}
                       >
                         Continue
-                        <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                       <Button
                         type="button"
                         variant="outline"
                         size="lg"
-                        className="flex-1 h-14 border-2 hover:bg-slate-50 rounded-xl font-semibold"
+                        className="flex-1"
                         disabled={isLoading}
                         onClick={resetForm}
                       >
@@ -905,18 +920,18 @@ export default function ApplyPage() {
                 {currentStep !== 'income' && (
                   <>
                     <section>
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Eligibility summary</h3>
-                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Eligibility summary</h3>
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <div>
-                            <p className="font-semibold text-gray-800">Declared monthly income: ₹{declaredIncomeNum.toLocaleString('en-IN')}</p>
-                            <p>Loan requested: ₹{Number(formData.loanAmount || 0).toLocaleString('en-IN')} · Tenure: {formData.tenureMonths || '—'} months</p>
+                            <p className="font-semibold text-slate-900">Declared monthly income: ₹{declaredIncomeNum.toLocaleString('en-IN')}</p>
+                            <p className="text-slate-500">Loan requested: ₹{Number(formData.loanAmount || 0).toLocaleString('en-IN')} · Tenure: {formData.tenureMonths || '—'} months</p>
                           </div>
-                          <Badge variant={isHighIncome ? 'secondary' : 'outline'}>
+                          <Badge variant={isHighIncome ? 'secondary' : 'outline'} className="bg-white">
                             {isHighIncome ? 'High-income track' : 'Inclusive fairness track'}
                           </Badge>
                         </div>
-                        <p className="mt-3">
+                        <p className="mt-3 text-slate-600">
                           {isHighIncome
                             ? 'As your income is above the barrier, alternative proxies are disabled. Please share strong bank and repayment proof to maximise approval chances.'
                             : 'You qualify for alternative proxies. Share recharge, electricity, and education data to boost fairness weights and unlock higher offers.'}
@@ -924,9 +939,9 @@ export default function ApplyPage() {
                       </div>
                     </section>
 
-                    <section className="border-t pt-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Data sharing consents</h3>
-                      <p className="text-sm text-gray-600 mb-4">
+                    <section className="border-t border-slate-200 pt-6">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Data sharing consents</h3>
+                      <p className="text-sm text-slate-600 mb-4">
                         SafeCred only pulls data you authorise. Each consent raises your consent depth and can increase fairness bonuses and offers.
                       </p>
                       {isHighIncome && (
@@ -936,54 +951,58 @@ export default function ApplyPage() {
                         </div>
                       )}
                       <div className="space-y-4">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                           <Checkbox
                             id="consentBankStatement"
                             checked={formData.consentBankStatement}
                             onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, consentBankStatement: checked as boolean }))}
                             disabled={isLoading}
+                            className="mt-1"
                           />
                           <div>
-                            <Label htmlFor="consentBankStatement" className="font-medium">Bank statement</Label>
-                            <p className="text-xs text-gray-500">Provides strongest evidence of income stability. Highly recommended.</p>
+                            <Label htmlFor="consentBankStatement" className="font-medium text-slate-900 cursor-pointer">Bank statement</Label>
+                            <p className="text-xs text-slate-500">Provides strongest evidence of income stability. Highly recommended.</p>
                           </div>
                         </div>
                         {showAlternativeProxies && (
                           <>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                               <Checkbox
                                 id="consentRecharge"
                                 checked={formData.consentRecharge}
                                 onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, consentRecharge: checked as boolean }))}
                                 disabled={isLoading}
+                                className="mt-1"
                               />
                               <div>
-                                <Label htmlFor="consentRecharge" className="font-medium">Mobile recharge</Label>
-                                <p className="text-xs text-gray-500">Shows spending cadence and boosts the consumption pillar.</p>
+                                <Label htmlFor="consentRecharge" className="font-medium text-slate-900 cursor-pointer">Mobile recharge</Label>
+                                <p className="text-xs text-slate-500">Shows spending cadence and boosts the consumption pillar.</p>
                               </div>
                             </div>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                               <Checkbox
                                 id="consentElectricity"
                                 checked={formData.consentElectricity}
                                 onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, consentElectricity: checked as boolean }))}
                                 disabled={isLoading}
+                                className="mt-1"
                               />
                               <div>
-                                <Label htmlFor="consentElectricity" className="font-medium">Electricity bills</Label>
-                                <p className="text-xs text-gray-500">Regular payments reduce volatility risk and help inclusive scoring.</p>
+                                <Label htmlFor="consentElectricity" className="font-medium text-slate-900 cursor-pointer">Electricity bills</Label>
+                                <p className="text-xs text-slate-500">Regular payments reduce volatility risk and help inclusive scoring.</p>
                               </div>
                             </div>
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">
                               <Checkbox
                                 id="consentEducation"
                                 checked={formData.consentEducation}
                                 onCheckedChange={(checked) => setFormData((prev) => ({ ...prev, consentEducation: checked as boolean }))}
                                 disabled={isLoading}
+                                className="mt-1"
                               />
                               <div>
-                                <Label htmlFor="consentEducation" className="font-medium">Education fees</Label>
-                                <p className="text-xs text-gray-500">Helps reward on-time payments for families with children.</p>
+                                <Label htmlFor="consentEducation" className="font-medium text-slate-900 cursor-pointer">Education fees</Label>
+                                <p className="text-xs text-slate-500">Helps reward on-time payments for families with children.</p>
                               </div>
                             </div>
                           </>
@@ -991,16 +1010,17 @@ export default function ApplyPage() {
                       </div>
                     </section>
 
-                    <section className="border-t pt-6">
-                      <h3 className="text-lg font-semibold text-gray-800 mb-4">Optional financial signals</h3>
-                      <p className="text-sm text-gray-600 mb-4">Share whatever data you have on hand. Even partial inputs improve scoring and manual review speed.</p>
+                    <section className="border-t border-slate-200 pt-6">
+                      <h3 className="text-lg font-semibold text-slate-900 mb-4">Optional financial signals</h3>
+                      <p className="text-sm text-slate-600 mb-4">Share whatever data you have on hand. Even partial inputs improve scoring and manual review speed.</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-3">
-                          <h4 className="text-sm font-semibold text-gray-700">Bank statement snapshot</h4>
+                          <h4 className="text-sm font-semibold text-slate-700">Bank statement snapshot</h4>
                           <Input
                             type="number"
                             min="0"
                             placeholder="Monthly credits (₹)"
+                            className="h-10"
                             value={formData.bankStatement.monthlyCredits}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1012,6 +1032,7 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="Average balance (₹)"
+                            className="h-10"
                             value={formData.bankStatement.avgBalance}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1023,11 +1044,12 @@ export default function ApplyPage() {
                         {showAlternativeProxies && (
                           <>
                             <div className="space-y-3">
-                              <h4 className="text-sm font-semibold text-gray-700">Mobile recharge history</h4>
+                              <h4 className="text-sm font-semibold text-slate-700">Mobile recharge history</h4>
                               <Input
                                 type="number"
                                 min="0"
                                 placeholder="Recharges per month"
+                                className="h-10"
                                 value={formData.rechargeHistory.frequency}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1039,6 +1061,7 @@ export default function ApplyPage() {
                                 type="number"
                                 min="0"
                                 placeholder="Avg recharge amount (₹)"
+                                className="h-10"
                                 value={formData.rechargeHistory.avgAmount}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1048,11 +1071,12 @@ export default function ApplyPage() {
                               />
                             </div>
                             <div className="space-y-3">
-                              <h4 className="text-sm font-semibold text-gray-700">Electricity bills</h4>
+                              <h4 className="text-sm font-semibold text-slate-700">Electricity bills</h4>
                               <Input
                                 type="number"
                                 min="0"
                                 placeholder="Bills paid (6 months)"
+                                className="h-10"
                                 value={formData.electricityBills.frequency}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1064,6 +1088,7 @@ export default function ApplyPage() {
                                 type="number"
                                 min="0"
                                 placeholder="Avg payment (₹)"
+                                className="h-10"
                                 value={formData.electricityBills.avgPayment}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1077,6 +1102,7 @@ export default function ApplyPage() {
                                 max="1"
                                 step="0.1"
                                 placeholder="Consistency score (0-1)"
+                                className="h-10"
                                 value={formData.electricityBills.consistency}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1086,11 +1112,12 @@ export default function ApplyPage() {
                               />
                             </div>
                             <div className="space-y-3">
-                              <h4 className="text-sm font-semibold text-gray-700">Education fee payments</h4>
+                              <h4 className="text-sm font-semibold text-slate-700">Education fee payments</h4>
                               <Input
                                 type="number"
                                 min="0"
                                 placeholder="Avg fee amount (₹)"
+                                className="h-10"
                                 value={formData.educationFees.avgFee}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1104,6 +1131,7 @@ export default function ApplyPage() {
                                 max="1"
                                 step="0.1"
                                 placeholder="Consistency score (0-1)"
+                                className="h-10"
                                 value={formData.educationFees.consistency}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1117,6 +1145,7 @@ export default function ApplyPage() {
                                 max="1"
                                 step="0.1"
                                 placeholder="On-time ratio (0-1)"
+                                className="h-10"
                                 value={formData.educationFees.onTimeRatio}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1128,6 +1157,7 @@ export default function ApplyPage() {
                                 type="number"
                                 min="0"
                                 placeholder="Records shared"
+                                className="h-10"
                                 value={formData.educationFees.frequency}
                                 onChange={(e) => setFormData((prev) => ({
                                   ...prev,
@@ -1139,13 +1169,14 @@ export default function ApplyPage() {
                           </>
                         )}
                         <div className="space-y-3">
-                          <h4 className="text-sm font-semibold text-gray-700">Repayment history</h4>
+                          <h4 className="text-sm font-semibold text-slate-700">Repayment history</h4>
                           <Input
                             type="number"
                             min="0"
                             max="1"
                             step="0.1"
                             placeholder="On-time ratio (0-1)"
+                            className="h-10"
                             value={formData.repaymentHistory.onTimeRatio}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1157,6 +1188,7 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="Avg delay (days)"
+                            className="h-10"
                             value={formData.repaymentHistory.avgPaymentDelayDays}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1168,6 +1200,7 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="Missed payments"
+                            className="h-10"
                             value={formData.repaymentHistory.missedCount}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1179,6 +1212,7 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="Previous loans"
+                            className="h-10"
                             value={formData.repaymentHistory.previousLoansCount}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1190,6 +1224,7 @@ export default function ApplyPage() {
                             type="number"
                             min="0"
                             placeholder="Months since last loan"
+                            className="h-10"
                             value={formData.repaymentHistory.timeSinceLastLoan}
                             onChange={(e) => setFormData((prev) => ({
                               ...prev,
@@ -1202,7 +1237,7 @@ export default function ApplyPage() {
                     </section>
 
                     <div className="flex flex-col md:flex-row gap-3 pt-4">
-                      <Button type="submit" size="lg" className="flex-1" disabled={isLoading}>
+                      <Button type="submit" size="lg" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
                         Submit for scoring
                       </Button>
@@ -1220,7 +1255,7 @@ export default function ApplyPage() {
                         type="button"
                         variant="ghost"
                         size="lg"
-                        className="flex-1"
+                        className="flex-1 text-slate-600"
                         disabled={isLoading}
                         onClick={resetForm}
                       >
@@ -1231,19 +1266,19 @@ export default function ApplyPage() {
                 )}
               </form>
 
-              <p className="mt-6 text-xs text-gray-500">
+              <p className="mt-6 text-xs text-slate-500">
                 Income is verified via NBCFDC. A mismatch above 10% will pause your application until clarified.
               </p>
             </CardContent>
           </Card>
 
           <div className="space-y-6">
-            <Card className="bg-white/80">
-              <CardHeader>
-                <CardTitle className="text-base">How fairness works</CardTitle>
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-900">How fairness works</CardTitle>
                 <CardDescription>SafeCred blends ML with alternative data to keep decisions inclusive.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-gray-600">
+              <CardContent className="space-y-3 text-sm text-slate-600">
                 <p>• ML confidence measures repayment behaviour from similar borrowers.</p>
                 <p>• Composite score rewards responsible bill payments, mobile cadence, and partner attestations.</p>
                 <p>• Fair lending bonus boosts underserved segments when consent depth and loan sizing look healthy.</p>
@@ -1251,19 +1286,19 @@ export default function ApplyPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Consent depth preview</CardTitle>
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-900">Consent depth preview</CardTitle>
                 <CardDescription>Consents selected: {consentsSelected} of {totalConsentSlots}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-3 w-full rounded-full bg-gray-200">
+                <div className="h-2 w-full rounded-full bg-slate-200">
                   <div
-                    className="h-3 rounded-full bg-blue-500"
+                    className="h-2 rounded-full bg-blue-600"
                     style={{ width: `${Math.min(100, consentDepthPreview * 100)}%` }}
                   />
                 </div>
-                <p className="mt-3 text-sm text-gray-600">
+                <p className="mt-3 text-sm text-slate-600">
                   {incomeTier === 'high'
                     ? 'Provide the latest bank statement or repayment receipts to move through manual review faster.'
                     : `Consent depth ${formatPercent(consentDepthPreview, 0)}. Sharing at least 2 sources typically unlocks fairness bonuses for low-income applicants.`}
@@ -1271,11 +1306,11 @@ export default function ApplyPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Tips for faster approvals</CardTitle>
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-slate-900">Tips for faster approvals</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2 text-sm text-gray-600">
+              <CardContent className="space-y-2 text-sm text-slate-600">
                 <p>• Keep loan amount below 60% of monthly income for auto-approval consideration.</p>
                 <p>• Upload partner attestations or repayment receipts if you lack formal documents.</p>
                 <p>• Refresh recharge and electricity data before submitting for the best signal strength.</p>
