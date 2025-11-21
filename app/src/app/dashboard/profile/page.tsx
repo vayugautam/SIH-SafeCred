@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/store/authStore'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -37,7 +37,7 @@ const INDIAN_STATES = [
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, token, setUser } = useAuthStore()
+  const { data: session, status } = useSession()
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -55,34 +55,36 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    if (!token || !user) {
+    if (status === 'unauthenticated') {
       router.push('/login')
+      return
+    }
+
+    if (status !== 'authenticated') {
       return
     }
 
     // Load user profile data
     const loadProfile = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/user/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
+        const response = await fetch('/api/user/profile')
 
         if (!response.ok) throw new Error('Failed to load profile')
 
         const data = await response.json()
+        const userData = data.user || {}
+        
         setProfile({
-          name: data.name || '',
-          email: data.email || '',
-          mobile: data.mobile || '',
-          address: data.address || '',
-          age: data.age || 18,
-          pincode: data.pincode || '',
-          state: data.state || '',
-          district: data.district || '',
-          hasChildren: data.hasChildren || false,
-          isSociallyDisadvantaged: data.isSociallyDisadvantaged || false
+          name: userData.name || '',
+          email: userData.email || '',
+          mobile: userData.mobile || '',
+          address: userData.address || '',
+          age: userData.age || 18,
+          pincode: userData.pincode || '',
+          state: userData.state || '',
+          district: userData.district || '',
+          hasChildren: userData.hasChildren || false,
+          isSociallyDisadvantaged: userData.isSociallyDisadvantaged || false
         })
       } catch (error) {
         console.error('Error loading profile:', error)
@@ -97,18 +99,17 @@ export default function ProfilePage() {
     }
 
     loadProfile()
-  }, [token, user, router, toast])
+  }, [status, router, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/user/profile`, {
+      const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(profile)
       })
@@ -120,9 +121,6 @@ export default function ProfilePage() {
 
       const data = await response.json()
       
-      // Update user in auth store
-      setUser(data.user)
-
       toast({
         title: 'Success',
         description: 'Profile updated successfully',
@@ -140,7 +138,7 @@ export default function ProfilePage() {
     }
   }
 
-  if (loading) {
+  if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
