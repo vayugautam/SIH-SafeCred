@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Plus, FileText, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Sparkles, ArrowRight } from 'lucide-react'
+import { Shield, Plus, FileText, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Sparkles, ArrowRight, LayoutDashboard, Settings, User } from 'lucide-react'
 import { formatCurrency, formatDate, formatPercent, formatNumber } from '@/lib/utils'
 import { Loading } from '@/components/ui/loading'
 
@@ -129,8 +129,8 @@ export default function DashboardPage() {
     const config = variants[status] || { variant: 'default', icon: Clock, label: status }
     const Icon = config.icon
     return (
-      <Badge variant={config.variant}>
-        <Icon className="h-3 w-3 mr-1" />
+      <Badge variant={config.variant} className="flex items-center gap-1">
+        <Icon className="h-3 w-3" />
         {config.label}
       </Badge>
     )
@@ -159,252 +159,246 @@ export default function DashboardPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 relative overflow-hidden">
-        {/* Animated background */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 right-1/4 w-96 h-96 bg-gradient-to-tr from-purple-400/20 to-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
-        
-        <div className="text-center relative z-10">
-          <div className="mb-6 flex justify-center">
-            <div className="p-4 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl shadow-2xl">
-              <Shield className="h-16 w-16 text-white animate-pulse" />
-            </div>
-          </div>
-          <Loading size="lg" text="Loading your dashboard..." />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-4">
+          <div className="mx-auto w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      {/* Header */}
-      <header className="glass border-b border-white/50 sticky top-0 z-10 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2 group">
-              <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300">
-                <Shield className="h-6 w-6 text-white" />
+    <div className="min-h-screen bg-slate-50">
+      {/* Navigation */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="bg-blue-600 p-1.5 rounded-lg">
+                  <Shield className="h-5 w-5 text-white" />
+                </div>
+                <span className="text-xl font-bold text-slate-900">SafeCred</span>
+              </Link>
+              <div className="hidden md:flex items-center gap-6">
+                <Link href="/dashboard" className="text-sm font-medium text-blue-600 flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+                <Link href="/dashboard/profile" className="text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Profile
+                </Link>
+                <Link href="/dashboard/settings" className="text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </Link>
               </div>
-              <span className="text-2xl font-bold gradient-text">SafeCred</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-semibold text-slate-700">{session?.user?.name}</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-slate-900">{session?.user?.name}</p>
                 <p className="text-xs text-slate-500">{session?.user?.email}</p>
               </div>
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => router.push('/api/auth/signout')}
-                className="border-2 hover:bg-red-50 hover:border-red-300 hover:text-red-600 transition-all duration-300 rounded-xl"
+                className="text-slate-600 hover:text-red-600 hover:bg-red-50"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8 fade-in-up">
-          <h1 className="text-4xl font-bold gradient-text mb-3 flex items-center gap-3">
-            Welcome back, {session?.user?.name?.split(' ')[0]}! 
-            <Sparkles className="h-8 w-8 text-yellow-500 animate-pulse" />
-          </h1>
-          <p className="text-slate-600 text-lg">Manage your loan applications and track your credit score</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+            <p className="text-slate-600">Welcome back, {session?.user?.name?.split(' ')[0]}</p>
+          </div>
+          <Link href="/apply">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+              <Plus className="h-4 w-4" />
+              New Application
+            </Button>
+          </Link>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="glass border-gradient hover-lift glow-hover fade-in-up">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-slate-600 font-medium">Total Applications</CardDescription>
-              <CardTitle className="text-4xl font-bold gradient-text">{applications.length}</CardTitle>
+              <CardDescription>Total Applications</CardDescription>
+              <CardTitle className="text-2xl font-bold text-slate-900">{applications.length}</CardTitle>
             </CardHeader>
           </Card>
-          <Card className="glass border-gradient hover-lift glow-hover fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-slate-600 font-medium">Approved</CardDescription>
-              <CardTitle className="text-4xl font-bold text-transparent bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text flex items-center gap-2">
+              <CardDescription>Approved Loans</CardDescription>
+              <CardTitle className="text-2xl font-bold text-green-600 flex items-center gap-2">
                 {applications.filter(a => a.status === 'APPROVED').length}
-                <CheckCircle className="h-6 w-6 text-green-500" />
+                <CheckCircle className="h-5 w-5" />
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card className="glass border-gradient hover-lift glow-hover fade-in-up" style={{ animationDelay: '0.2s' }}>
+          <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-slate-600 font-medium">Pending</CardDescription>
-              <CardTitle className="text-4xl font-bold text-transparent bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text flex items-center gap-2">
+              <CardDescription>Pending Review</CardDescription>
+              <CardTitle className="text-2xl font-bold text-yellow-600 flex items-center gap-2">
                 {applications.filter(a => a.status === 'PENDING' || a.status === 'PROCESSING').length}
-                <Clock className="h-6 w-6 text-yellow-500" />
+                <Clock className="h-5 w-5" />
               </CardTitle>
             </CardHeader>
           </Card>
-          <Card className="glass border-gradient hover-lift glow-hover fade-in-up" style={{ animationDelay: '0.3s' }}>
+          <Card className="border-slate-200 shadow-sm">
             <CardHeader className="pb-2">
-              <CardDescription className="text-slate-600 font-medium">Total Approved Amount</CardDescription>
-              <CardTitle className="text-4xl font-bold text-transparent bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text flex items-center gap-2">
+              <CardDescription>Total Approved Amount</CardDescription>
+              <CardTitle className="text-2xl font-bold text-blue-600 flex items-center gap-2">
                 {formatCurrency(
                   applications
                     .filter(a => a.status === 'APPROVED')
                     .reduce((sum, a) => sum + (a.approvedLoanAmount || 0), 0)
                 )}
-                <TrendingUp className="h-6 w-6 text-blue-500" />
+                <TrendingUp className="h-5 w-5" />
               </CardTitle>
             </CardHeader>
           </Card>
         </div>
 
-        {/* Action Button */}
-        <div className="mb-8 fade-in-up" style={{ animationDelay: '0.4s' }}>
-          <Link href="/apply">
-            <Button size="lg" className="gap-2 h-14 px-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group">
-              <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" />
-              Apply for New Loan
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-        </div>
-
         {/* Applications List */}
-        <Card className="glass border-gradient shadow-xl fade-in-up" style={{ animationDelay: '0.5s' }}>
-          <CardHeader>
-            <CardTitle className="text-2xl gradient-text">Your Applications</CardTitle>
-            <CardDescription className="text-base">Track the status of your loan applications</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <div className="mb-4 rounded-xl border-2 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 p-4 text-sm text-red-700 shadow-md slide-in-from-top">
-                <strong className="font-semibold">Error:</strong> {error}
-              </div>
-            )}
-            {applications.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="mb-6 flex justify-center">
-                  <div className="p-4 bg-gradient-to-br from-slate-200 to-slate-300 rounded-2xl">
-                    <FileText className="h-16 w-16 text-slate-500" />
-                  </div>
+        <div className="space-y-6">
+          <h2 className="text-lg font-semibold text-slate-900">Recent Applications</h2>
+          
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {applications.length === 0 ? (
+            <Card className="border-dashed border-2 border-slate-200 bg-slate-50/50">
+              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                  <FileText className="h-6 w-6 text-slate-400" />
                 </div>
-                <h3 className="text-2xl font-bold gradient-text mb-3">No applications yet</h3>
-                <p className="text-slate-600 mb-6 text-lg">Start your loan application process today</p>
+                <h3 className="text-lg font-medium text-slate-900 mb-1">No applications yet</h3>
+                <p className="text-slate-500 mb-6 max-w-sm">
+                  Start your journey by applying for a loan. We use alternative data to give you the best rates.
+                </p>
                 <Link href="/apply">
-                  <Button className="h-12 px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group">
-                    Apply for Loan
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  <Button variant="outline" className="gap-2">
+                    Start Application
+                    <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {applications.map((app) => {
-                  const scoreDetails = normaliseScoreDetails(app.scoreDetails)
-                  const breakdown = getScoreBreakdown(scoreDetails)
-                  const combine = getCombineDetails(scoreDetails)
-                  const components = (breakdown?.components || {}) as Record<string, any>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {applications.map((app) => {
+                const scoreDetails = normaliseScoreDetails(app.scoreDetails)
+                const breakdown = getScoreBreakdown(scoreDetails)
+                const combine = getCombineDetails(scoreDetails)
+                const components = (breakdown?.components || {}) as Record<string, any>
 
-                  const consentDepth = typeof breakdown?.consent_depth === 'number'
-                    ? breakdown.consent_depth
-                    : typeof components?.consent_depth === 'number'
-                      ? components.consent_depth
-                      : null
+                const consentDepth = typeof breakdown?.consent_depth === 'number'
+                  ? breakdown.consent_depth
+                  : typeof components?.consent_depth === 'number'
+                    ? components.consent_depth
+                    : null
 
-                  const fairnessBonus = typeof breakdown?.fair_lending_bonus === 'number' ? breakdown.fair_lending_bonus : 0
-                  const incomeRelief = typeof breakdown?.income_volatility_relief === 'number' ? breakdown.income_volatility_relief : 0
+                const fairnessBonus = typeof breakdown?.fair_lending_bonus === 'number' ? breakdown.fair_lending_bonus : 0
+                const incomeRelief = typeof breakdown?.income_volatility_relief === 'number' ? breakdown.income_volatility_relief : 0
 
-                  const loanToIncome = typeof breakdown?.loan_to_income_ratio === 'number'
-                    ? breakdown.loan_to_income_ratio
-                    : typeof scoreDetails?.loan_to_income_ratio === 'number'
-                      ? scoreDetails.loan_to_income_ratio
-                      : null
+                const loanToIncome = typeof breakdown?.loan_to_income_ratio === 'number'
+                  ? breakdown.loan_to_income_ratio
+                  : typeof scoreDetails?.loan_to_income_ratio === 'number'
+                    ? scoreDetails.loan_to_income_ratio
+                    : null
 
-                  const consentBonus = typeof scoreDetails?.consent_bonus === 'number' ? scoreDetails.consent_bonus : null
-                  const featuresExtracted = typeof scoreDetails?.features_extracted === 'number' ? scoreDetails.features_extracted : null
-                  const pillarScores = (breakdown?.pillar_scores || {}) as Record<string, number>
+                const consentBonus = typeof scoreDetails?.consent_bonus === 'number' ? scoreDetails.consent_bonus : null
+                const featuresExtracted = typeof scoreDetails?.features_extracted === 'number' ? scoreDetails.features_extracted : null
+                const pillarScores = (breakdown?.pillar_scores || {}) as Record<string, number>
 
-                  const mlProbability = app.mlProbability ?? combine?.ml_probability ?? null
-                  const compositeScore = app.compositeScore ?? combine?.composite_score ?? null
-                  const finalSci = app.finalSci ?? combine?.final_sci ?? null
+                const mlProbability = app.mlProbability ?? combine?.ml_probability ?? null
+                const compositeScore = app.compositeScore ?? combine?.composite_score ?? null
+                const finalSci = app.finalSci ?? combine?.final_sci ?? null
 
-                  const consentFlags = [
-                    { label: 'Bank Statement', value: app.consentBankStatement },
-                    { label: 'Mobile Recharge', value: app.consentRecharge },
-                    { label: 'Electricity Bills', value: app.consentElectricity },
-                    { label: 'Education Fees', value: app.consentEducation },
-                  ]
+                const consentFlags = [
+                  { label: 'Bank Statement', value: app.consentBankStatement },
+                  { label: 'Mobile Recharge', value: app.consentRecharge },
+                  { label: 'Electricity Bills', value: app.consentElectricity },
+                  { label: 'Education Fees', value: app.consentEducation },
+                ]
 
-                  const fairnessInsights: string[] = []
-                  if (consentDepth !== null) {
-                    fairnessInsights.push(`Consent depth recorded at ${formatPercent(consentDepth, 0)}.`)
-                    if (consentDepth < 0.5) {
-                      fairnessInsights.push('Share one more data source to unlock a bigger fairness boost.')
-                    }
+                const fairnessInsights: string[] = []
+                if (consentDepth !== null) {
+                  fairnessInsights.push(`Consent depth recorded at ${formatPercent(consentDepth, 0)}.`)
+                  if (consentDepth < 0.5) {
+                    fairnessInsights.push('Share one more data source to unlock a bigger fairness boost.')
                   }
-                  if (fairnessBonus > 0) {
-                    fairnessInsights.push(`Fair lending bonus added ${(fairnessBonus * 100).toFixed(0)} pts to your composite score.`)
-                  }
-                  if (incomeRelief > 0) {
-                    fairnessInsights.push('Income volatility relief supported your score despite irregular cashflows.')
-                  }
-                  if (loanToIncome !== null && loanToIncome > 0.6) {
-                    fairnessInsights.push('Loan-to-income ratio is high; a loan officer will confirm affordability before approval.')
-                  }
+                }
+                if (fairnessBonus > 0) {
+                  fairnessInsights.push(`Fair lending bonus added ${(fairnessBonus * 100).toFixed(0)} pts to your composite score.`)
+                }
+                if (incomeRelief > 0) {
+                  fairnessInsights.push('Income volatility relief supported your score despite irregular cashflows.')
+                }
+                if (loanToIncome !== null && loanToIncome > 0.6) {
+                  fairnessInsights.push('Loan-to-income ratio is high; a loan officer will confirm affordability before approval.')
+                }
 
-                  const statusMessage = app.decisionMessage ||
-                    (app.status === 'APPROVED'
-                      ? 'Your loan has been approved! Disbursement will be processed within 24 hours.'
-                      : app.status === 'MANUAL_REVIEW'
-                        ? 'Your application is under manual review. You will be notified of the decision soon.'
-                        : app.status === 'REJECTED'
-                          ? 'This application did not meet our lending criteria.'
-                          : null)
+                const statusMessage = app.decisionMessage ||
+                  (app.status === 'APPROVED'
+                    ? 'Your loan has been approved! Disbursement will be processed within 24 hours.'
+                    : app.status === 'MANUAL_REVIEW'
+                      ? 'Your application is under manual review. You will be notified of the decision soon.'
+                      : app.status === 'REJECTED'
+                        ? 'This application did not meet our lending criteria.'
+                        : null)
 
-                  const statusTone = app.status === 'APPROVED'
-                    ? 'success'
-                    : app.status === 'REJECTED'
-                      ? 'destructive'
-                      : 'warning'
+                const statusTone = app.status === 'APPROVED'
+                  ? 'success'
+                  : app.status === 'REJECTED'
+                    ? 'destructive'
+                    : 'warning'
 
-                  return (
-                    <div key={app.id} className="border-2 border-slate-200 rounded-xl p-6 hover-lift bg-white/80 backdrop-blur-sm transition-all duration-300 hover:shadow-xl hover:border-blue-300">
-                      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-3 mb-2">
-                            <h3 className="font-bold text-xl gradient-text">Application #{app.applicationId}</h3>
+                return (
+                  <Card key={app.id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <CardHeader className="border-b border-slate-100 bg-slate-50/50 pb-4">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-semibold text-lg text-slate-900">Application #{app.applicationId}</h3>
                             {getStatusBadge(app.status)}
-                            {app.riskBand && getRiskBadge(app.riskBand)}
-                            {app.needCategory && (
-                              <Badge variant="info">{app.needCategory}</Badge>
-                            )}
                           </div>
-                          <p className="text-sm text-slate-500 font-medium">
+                          <p className="text-sm text-slate-500">
                             Applied on {formatDate(app.createdAt)}
                           </p>
-                          {app.riskCategory && (
-                            <p className="text-xs text-slate-500 mt-1">
-                              Risk category: {app.riskCategory}
-                            </p>
-                          )}
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-slate-500 font-medium">Requested Amount</p>
-                          <p className="text-2xl font-bold gradient-text">
+                          <p className="text-sm text-slate-500">Requested Amount</p>
+                          <p className="text-xl font-bold text-slate-900">
                             {formatCurrency(app.loanAmount)}
                           </p>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    </CardHeader>
+                    
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-6">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Tenure</p>
-                          <p className="font-medium">{app.tenureMonths} months</p>
+                          <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Tenure</p>
+                          <p className="font-medium text-slate-900">{app.tenureMonths} months</p>
                         </div>
                         {app.approvedLoanAmount && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Loan Offer</p>
+                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Loan Offer</p>
                             <p className="font-medium text-green-600">
                               {formatCurrency(app.approvedLoanAmount)}
                             </p>
@@ -412,7 +406,7 @@ export default function DashboardPage() {
                         )}
                         {finalSci !== null && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">SafeCred Index</p>
+                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">SafeCred Index</p>
                             <p className={`font-semibold ${
                               finalSci >= 80 ? 'text-green-600' :
                               finalSci >= 60 ? 'text-yellow-600' :
@@ -424,86 +418,92 @@ export default function DashboardPage() {
                         )}
                         {mlProbability !== null && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">ML Confidence</p>
-                            <p className="font-medium">{formatPercent(mlProbability, 1)}</p>
+                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">ML Confidence</p>
+                            <p className="font-medium text-slate-900">{formatPercent(mlProbability, 1)}</p>
                           </div>
                         )}
                         {compositeScore !== null && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Composite Score</p>
-                            <p className="font-medium">{formatNumber(compositeScore, 1)}</p>
+                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Composite Score</p>
+                            <p className="font-medium text-slate-900">{formatNumber(compositeScore, 1)}</p>
                           </div>
                         )}
                         {loanToIncome !== null && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Loan-to-Income</p>
-                            <p className="font-medium">{loanToIncome.toFixed(2)}x</p>
+                            <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Loan-to-Income</p>
+                            <p className="font-medium text-slate-900">{loanToIncome.toFixed(2)}x</p>
                           </div>
                         )}
                       </div>
 
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2 mb-6">
                         {consentFlags.map((consent) => (
                           <Badge
                             key={consent.label}
                             variant={consent.value ? 'success' : 'outline'}
-                            className={consent.value ? '' : 'text-gray-500'}
+                            className={consent.value ? '' : 'text-slate-400 border-slate-200'}
                           >
                             {consent.value ? 'Granted' : 'Missing'} · {consent.label}
                           </Badge>
                         ))}
                         {consentBonus !== null && consentBonus > 0 && (
-                          <Badge variant="secondary" className="text-green-700">
+                          <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200">
                             +₹{consentBonus.toLocaleString('en-IN')} consent bonus
                           </Badge>
                         )}
                       </div>
 
                       {breakdown && (
-                        <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <h4 className="text-sm font-semibold text-gray-700">Fairness insights</h4>
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 mb-4">
+                          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <h4 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                              <Sparkles className="h-4 w-4 text-blue-600" />
+                              Fairness Insights
+                            </h4>
                             {app.riskBand && (
-                              <Badge variant="outline" className="text-gray-600">
+                              <Badge variant="outline" className="bg-white">
                                 {formatRiskLabel(app.riskBand)}
                               </Badge>
                             )}
                           </div>
-                          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             <div>
-                              <p className="text-xs text-gray-500 mb-1">Consent depth</p>
-                              <p className="font-medium">{formatPercent(consentDepth ?? 0, 0)}</p>
-                              <div className="mt-1 h-2 rounded-full bg-white">
-                                <div
-                                  className="h-2 rounded-full bg-blue-500"
-                                  style={{ width: `${Math.min(100, Math.max(0, (consentDepth ?? 0) * 100))}%` }}
-                                />
+                              <p className="text-xs text-slate-500 mb-1">Consent depth</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-slate-900">{formatPercent(consentDepth ?? 0, 0)}</p>
+                                <div className="h-1.5 flex-1 rounded-full bg-slate-200 max-w-[100px]">
+                                  <div
+                                    className="h-1.5 rounded-full bg-blue-600"
+                                    style={{ width: `${Math.min(100, Math.max(0, (consentDepth ?? 0) * 100))}%` }}
+                                  />
+                                </div>
                               </div>
                             </div>
                             <div>
-                              <p className="text-xs text-gray-500 mb-1">Fair lending bonus</p>
-                              <p className="font-medium">{(fairnessBonus * 100).toFixed(0)} pts</p>
+                              <p className="text-xs text-slate-500 mb-1">Fair lending bonus</p>
+                              <p className="font-medium text-slate-900">{(fairnessBonus * 100).toFixed(0)} pts</p>
                             </div>
                             <div>
-                              <p className="text-xs text-gray-500 mb-1">Income relief applied</p>
-                              <p className="font-medium">{(incomeRelief * 100).toFixed(0)} pts</p>
+                              <p className="text-xs text-slate-500 mb-1">Income relief applied</p>
+                              <p className="font-medium text-slate-900">{(incomeRelief * 100).toFixed(0)} pts</p>
                             </div>
                             {featuresExtracted !== null && (
                               <div>
-                                <p className="text-xs text-gray-500 mb-1">Signals analysed</p>
-                                <p className="font-medium">{featuresExtracted}</p>
+                                <p className="text-xs text-slate-500 mb-1">Signals analysed</p>
+                                <p className="font-medium text-slate-900">{featuresExtracted}</p>
                               </div>
                             )}
                           </div>
 
                           {Object.keys(pillarScores).length > 0 && (
-                            <div className="mt-4">
-                              <p className="text-xs text-gray-500 mb-2">Pillar contribution</p>
+                            <div className="mb-4">
+                              <p className="text-xs text-slate-500 mb-2">Pillar contribution</p>
                               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {Object.entries(pillarScores).map(([pillar, value]) => (
-                                  <div key={pillar} className="rounded-md bg-white px-3 py-2 text-sm">
-                                    <p className="text-xs uppercase text-gray-400">{pillar}</p>
-                                    <p className="font-semibold text-gray-700">{formatPercent(value, 0)}</p>
+                                  <div key={pillar} className="rounded border border-slate-200 bg-white px-3 py-2">
+                                    <p className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">{pillar}</p>
+                                    <p className="font-semibold text-slate-700">{formatPercent(value, 0)}</p>
                                   </div>
                                 ))}
                               </div>
@@ -511,41 +511,39 @@ export default function DashboardPage() {
                           )}
 
                           {fairnessInsights.length > 0 && (
-                            <ul className="mt-4 space-y-2 text-sm text-gray-600 list-disc list-inside">
-                              {fairnessInsights.map((note) => (
-                                <li key={note}>{note}</li>
-                              ))}
-                            </ul>
+                            <div className="bg-blue-50/50 rounded p-3">
+                              <ul className="space-y-1 text-sm text-slate-600 list-disc list-inside">
+                                {fairnessInsights.map((note) => (
+                                  <li key={note}>{note}</li>
+                                ))}
+                              </ul>
+                            </div>
                           )}
                         </div>
                       )}
 
                       {statusMessage && (
-                        <div className="mt-4 pt-4 border-t">
-                          <div
-                            className={`flex items-center gap-2 text-sm px-4 py-2 rounded ${
-                              statusTone === 'success'
-                                ? 'text-green-700 bg-green-50'
-                                : statusTone === 'destructive'
-                                  ? 'text-red-700 bg-red-50'
-                                  : 'text-yellow-700 bg-yellow-50'
-                            }`}
-                          >
-                            {statusTone === 'success' && <CheckCircle className="h-4 w-4" />}
-                            {statusTone === 'warning' && <AlertCircle className="h-4 w-4" />}
-                            {statusTone === 'destructive' && <XCircle className="h-4 w-4" />}
-                            <span>{statusMessage}</span>
-                          </div>
+                        <div className={`flex items-start gap-3 p-4 rounded-lg border ${
+                          statusTone === 'success'
+                            ? 'bg-green-50 border-green-100 text-green-800'
+                            : statusTone === 'destructive'
+                              ? 'bg-red-50 border-red-100 text-red-800'
+                              : 'bg-yellow-50 border-yellow-100 text-yellow-800'
+                        }`}>
+                          {statusTone === 'success' && <CheckCircle className="h-5 w-5 shrink-0 mt-0.5" />}
+                          {statusTone === 'warning' && <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />}
+                          {statusTone === 'destructive' && <XCircle className="h-5 w-5 shrink-0 mt-0.5" />}
+                          <p className="text-sm font-medium">{statusMessage}</p>
                         </div>
                       )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
