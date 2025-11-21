@@ -15,6 +15,9 @@
     "postinstall": "prisma generate",
     "rescore:scheduler": "tsx scripts/rescore-cron.ts"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
     "@next-auth/prisma-adapter": "^1.0.7",
