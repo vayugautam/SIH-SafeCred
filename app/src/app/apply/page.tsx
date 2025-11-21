@@ -451,10 +451,6 @@ export default function ApplyPage() {
     const finalFloor = combineDetails.final_floor_adjustment
     const qualifiesAuto = Boolean(details.meets_low_risk_automatic || details.qualifies_high_confidence)
 
-    const agentReview = details.agent_review
-    const coachingTips = agentReview?.coaching_tips
-    const lenderNotes = agentReview?.lender_notes
-
     const declaredIncomeValue = Number(application.declaredIncome ?? mlResult.declaredIncome ?? 0)
     const incomeBarrierUsed = Number(breakdown.income_barrier ?? details.income_barrier ?? incomeBarrier) || incomeBarrier
     const alternativeProxiesBlocked = Boolean(breakdown.alternative_proxies_blocked ?? details.alternative_proxies_blocked ?? false) ||
@@ -698,40 +694,6 @@ export default function ApplyPage() {
                       <li key={note}>{note}</li>
                     ))}
                   </ul>
-                )}
-
-                {coachingTips && coachingTips.length > 0 && (
-                  <div className="mt-4 bg-emerald-50/50 rounded-lg p-4 border border-emerald-100">
-                    <h5 className="text-sm font-semibold text-emerald-800 mb-3 flex items-center gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      Financial Coaching Tips
-                    </h5>
-                    <ul className="space-y-2 text-sm text-emerald-700">
-                      {coachingTips.map((tip: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                          <span>{tip}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {lenderNotes && lenderNotes.length > 0 && (
-                  <div className="mt-4 bg-slate-100 rounded-lg p-4 border border-slate-200">
-                    <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Lender's Risk Assessment
-                    </h5>
-                    <ul className="space-y-2 text-sm text-slate-600">
-                      {lenderNotes.map((note: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                          <span>{note}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 )}
               </div>
 

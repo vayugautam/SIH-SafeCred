@@ -285,16 +285,7 @@ export async function POST(request: NextRequest) {
           needCategory: riskNeedLabel,
           approvedLoanAmount: mlResult.loan_offer,
           decisionMessage: mlResult.message,
-          scoreDetails: mlResult.details 
-            ? { 
-                ...mlResult.details, 
-                agent_review: mlResult.agent_review,
-                nlp_insights: mlResult.nlp_insights 
-              } 
-            : {
-                agent_review: mlResult.agent_review,
-                nlp_insights: mlResult.nlp_insights
-              },
+          scoreDetails: mlResult.details ?? null,
           status: mlResult.status === 'approved' ? 'APPROVED' :
                   mlResult.status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW',
           processedAt: new Date(),

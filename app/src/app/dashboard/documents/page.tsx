@@ -84,10 +84,7 @@ export default function DocumentsPage() {
         <CardHeader>
           <CardTitle>Document Management</CardTitle>
           <CardDescription>
-            Upload and manage your supporting documents for loan applications.
-            <span className="block mt-1 text-blue-600 font-medium">
-              Tip: Uploading more document types increases your Consent Depth score and can unlock higher loan amounts.
-            </span>
+            Upload and manage your supporting documents for loan applications
           </CardDescription>
         </CardHeader>
         <CardContent>

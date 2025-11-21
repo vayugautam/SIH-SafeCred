@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2 } from 'lucide-react'
+import { Loader2, TrendingUp, Award, Shield, Database, CheckCircle2, XCircle } from 'lucide-react'
 
 interface UserProfile {
   name: string
@@ -41,6 +41,7 @@ export default function ProfilePage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [userStats, setUserStats] = useState<any>(null)
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
     email: '',
@@ -67,12 +68,15 @@ export default function ProfilePage() {
     // Load user profile data
     const loadProfile = async () => {
       try {
-        const response = await fetch('/api/user/profile')
+        const [profileResponse, statsResponse] = await Promise.all([
+          fetch('/api/user/profile'),
+          fetch('/api/user/stats'),
+        ])
 
-        if (!response.ok) throw new Error('Failed to load profile')
+        if (!profileResponse.ok) throw new Error('Failed to load profile')
 
-        const data = await response.json()
-        const userData = data.user || {}
+        const profileData = await profileResponse.json()
+        const userData = profileData.user || {}
         
         setProfile({
           name: userData.name || '',
@@ -86,6 +90,11 @@ export default function ProfilePage() {
           hasChildren: userData.hasChildren || false,
           isSociallyDisadvantaged: userData.isSociallyDisadvantaged || false
         })
+
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          setUserStats(statsData.stats || null)
+        }
       } catch (error) {
         console.error('Error loading profile:', error)
         toast({
@@ -147,7 +156,108 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6">
+    <div className="container max-w-6xl mx-auto p-6 space-y-6">
+      {/* Credit Score & Financial Health */}
+      {userStats && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+            <CardHeader>
+              <CardDescription className="flex items-center gap-1 text-green-700">
+                <Award className="h-4 w-4" />
+                Financial Health Score
+              </CardDescription>
+              <CardTitle className="text-4xl font-bold text-green-700">
+                {userStats.healthScore}/100
+              </CardTitle>
+              <p className="text-sm text-green-600">
+                {userStats.healthScore >= 75 ? 'Excellent Standing' :
+                 userStats.healthScore >= 50 ? 'Good Standing' : 'Building Credit'}
+              </p>
+            </CardHeader>
+          </Card>
+          
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardHeader>
+              <CardDescription className="flex items-center gap-1 text-blue-700">
+                <TrendingUp className="h-4 w-4" />
+                Average SCI Score
+              </CardDescription>
+              <CardTitle className="text-4xl font-bold text-blue-700">
+                {userStats.averageSci ? userStats.averageSci.toFixed(0) : '--'}
+              </CardTitle>
+              <p className="text-sm text-blue-600">
+                {userStats.averageSci ? 'Based on ' + userStats.totalApplications + ' applications' : 'No applications yet'}
+              </p>
+            </CardHeader>
+          </Card>
+          
+          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+            <CardHeader>
+              <CardDescription className="flex items-center gap-1 text-purple-700">
+                <Shield className="h-4 w-4" />
+                Repayment Rate
+              </CardDescription>
+              <CardTitle className="text-4xl font-bold text-purple-700">
+                {userStats.repaymentRate ? userStats.repaymentRate.toFixed(1) : '0'}%
+              </CardTitle>
+              <p className="text-sm text-purple-600">
+                {userStats.totalPayments > 0 ? `${userStats.onTimePayments}/${userStats.totalPayments} on-time` : 'No payment history'}
+              </p>
+            </CardHeader>
+          </Card>
+        </div>
+      )}
+
+      {/* Data Sharing Overview */}
+      {userStats && userStats.totalApplications > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Database className="h-5 w-5 text-blue-600" />
+              <CardTitle>Data Sharing Overview</CardTitle>
+            </div>
+            <CardDescription>
+              Sharing more data helps us provide better loan offers tailored to your needs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-xs text-slate-500">Bank Statement</p>
+                  <p className="text-sm font-medium text-slate-900">Connected</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-xs text-slate-500">Mobile Recharge</p>
+                  <p className="text-sm font-medium text-slate-900">Connected</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <XCircle className="h-5 w-5 text-slate-400" />
+                <div>
+                  <p className="text-xs text-slate-500">Electricity Bills</p>
+                  <p className="text-sm font-medium text-slate-600">Not Connected</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <XCircle className="h-5 w-5 text-slate-400" />
+                <div>
+                  <p className="text-xs text-slate-500">Education Fees</p>
+                  <p className="text-sm font-medium text-slate-600">Not Connected</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-blue-600 mt-4 bg-blue-50 p-3 rounded-lg border border-blue-200">
+              💡 Tip: Connect all your data sources to unlock better interest rates and higher loan amounts
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Profile Settings</CardTitle>
@@ -283,11 +393,6 @@ export default function ProfilePage() {
                     I have children
                   </Label>
                 </div>
-                {profile.hasChildren && (
-                   <p className="text-sm text-blue-600 ml-6 bg-blue-50 p-2 rounded border border-blue-100">
-                     Tip: Sharing education fee payment history can significantly boost your credit score.
-                   </p>
-                )}
 
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -301,11 +406,6 @@ export default function ProfilePage() {
                     I belong to a socially disadvantaged group
                   </Label>
                 </div>
-                {profile.isSociallyDisadvantaged && (
-                   <p className="text-sm text-emerald-600 ml-6 bg-emerald-50 p-2 rounded border border-emerald-100">
-                     SafeCred applies a fairness bonus to your credit score to ensure equal access to credit.
-                   </p>
-                )}
               </div>
             </div>
 

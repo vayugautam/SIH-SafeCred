@@ -7,9 +7,10 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Shield, Plus, FileText, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Sparkles, ArrowRight, LayoutDashboard, Settings, User } from 'lucide-react'
+import { Shield, Plus, FileText, TrendingUp, Clock, CheckCircle, XCircle, AlertCircle, LogOut, Sparkles, ArrowRight, LayoutDashboard, Settings, User, Heart, Zap, Target, Award, TrendingDown, Activity } from 'lucide-react'
 import { formatCurrency, formatDate, formatPercent, formatNumber } from '@/lib/utils'
 import { Loading } from '@/components/ui/loading'
+import { NotificationBell } from '@/components/NotificationBell'
 
 interface Application {
   id: string
@@ -32,6 +33,28 @@ interface Application {
   consentBankStatement: boolean
   createdAt: string
   processedAt: string | null
+}
+
+interface UserStats {
+  totalApplications: number
+  approvedApplications: number
+  rejectedApplications: number
+  pendingApplications: number
+  totalApprovedAmount: number
+  totalRequestedAmount: number
+  averageSci: number | null
+  repaymentRate: number | null
+  healthScore: number
+  totalPayments: number
+  onTimePayments: number
+  latePayments: number
+  missedPayments: number
+}
+
+interface CoachingTip {
+  category: string
+  tip: string
+  impact: string
 }
 
 const normaliseScoreDetails = (raw: unknown) => {
@@ -79,28 +102,39 @@ export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [applications, setApplications] = useState<Application[]>([])
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [recommendations, setRecommendations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
   const fetchApplications = useCallback(async () => {
     try {
-      const response = await fetch('/api/applications')
+      const [appsResponse, statsResponse] = await Promise.all([
+        fetch('/api/applications'),
+        fetch('/api/user/stats'),
+      ])
 
-      if (response.status === 401) {
+      if (appsResponse.status === 401) {
         setIsLoading(false)
         router.push('/login?callbackUrl=/dashboard')
         return
       }
 
-      if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`)
+      if (!appsResponse.ok) {
+        throw new Error(`Request failed with status ${appsResponse.status}`)
       }
 
-      const data = await response.json()
-      setApplications(data.applications || [])
+      const appsData = await appsResponse.json()
+      setApplications(appsData.applications || [])
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setUserStats(statsData.stats || null)
+        setRecommendations(statsData.recommendations || [])
+      }
     } catch (error) {
-      console.error('Failed to fetch applications:', error)
-      setError('We could not load your applications. Please try again in a moment.')
+      console.error('Failed to fetch data:', error)
+      setError('We could not load your data. Please try again in a moment.')
     } finally {
       setIsLoading(false)
     }
@@ -197,6 +231,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex items-center gap-4">
+              <NotificationBell />
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium text-slate-900">{session?.user?.name}</p>
                 <p className="text-xs text-slate-500">{session?.user?.email}</p>
@@ -231,44 +266,138 @@ export default function DashboardPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
-              <CardDescription>Total Applications</CardDescription>
-              <CardTitle className="text-2xl font-bold text-slate-900">{applications.length}</CardTitle>
+              <CardDescription className="flex items-center gap-1">
+                <FileText className="h-3 w-3" />
+                Total Applications
+              </CardDescription>
+              <CardTitle className="text-3xl font-bold text-slate-900">
+                {userStats?.totalApplications || applications.length}
+              </CardTitle>
+              {userStats && userStats.totalApplications > 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Approved: {((userStats.approvedApplications / userStats.totalApplications) * 100).toFixed(0)}%
+                </p>
+              )}
             </CardHeader>
           </Card>
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
-              <CardDescription>Approved Loans</CardDescription>
-              <CardTitle className="text-2xl font-bold text-green-600 flex items-center gap-2">
-                {applications.filter(a => a.status === 'APPROVED').length}
-                <CheckCircle className="h-5 w-5" />
+              <CardDescription className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Approved Loans
+              </CardDescription>
+              <CardTitle className="text-3xl font-bold text-green-600 flex items-center gap-2">
+                {userStats?.approvedApplications || applications.filter(a => a.status === 'APPROVED').length}
               </CardTitle>
+              {userStats && userStats.totalApprovedAmount > 0 && (
+                <p className="text-xs text-slate-500 mt-1">
+                  {formatCurrency(userStats.totalApprovedAmount)}
+                </p>
+              )}
             </CardHeader>
           </Card>
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
-              <CardDescription>Pending Review</CardDescription>
-              <CardTitle className="text-2xl font-bold text-yellow-600 flex items-center gap-2">
-                {applications.filter(a => a.status === 'PENDING' || a.status === 'PROCESSING').length}
-                <Clock className="h-5 w-5" />
+              <CardDescription className="flex items-center gap-1">
+                <Activity className="h-3 w-3" />
+                Financial Health
+              </CardDescription>
+              <CardTitle className={`text-3xl font-bold flex items-center gap-2 ${
+                (userStats?.healthScore || 50) >= 75 ? 'text-green-600' :
+                (userStats?.healthScore || 50) >= 50 ? 'text-yellow-600' :
+                'text-red-600'
+              }`}>
+                {userStats?.healthScore || 50}
+                <Award className="h-5 w-5" />
               </CardTitle>
+              <p className="text-xs text-slate-500 mt-1">
+                {(userStats?.healthScore || 50) >= 75 ? 'Excellent' :
+                 (userStats?.healthScore || 50) >= 50 ? 'Good' : 'Needs Improvement'}
+              </p>
             </CardHeader>
           </Card>
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
-              <CardDescription>Total Approved Amount</CardDescription>
-              <CardTitle className="text-2xl font-bold text-blue-600 flex items-center gap-2">
-                {formatCurrency(
-                  applications
-                    .filter(a => a.status === 'APPROVED')
-                    .reduce((sum, a) => sum + (a.approvedLoanAmount || 0), 0)
-                )}
-                <TrendingUp className="h-5 w-5" />
+              <CardDescription className="flex items-center gap-1">
+                <Target className="h-3 w-3" />
+                Average SCI Score
+              </CardDescription>
+              <CardTitle className={`text-3xl font-bold ${
+                (userStats?.averageSci || 0) >= 70 ? 'text-green-600' :
+                (userStats?.averageSci || 0) >= 50 ? 'text-yellow-600' :
+                'text-red-600'
+              }`}>
+                {userStats?.averageSci ? userStats.averageSci.toFixed(0) : '--'}
               </CardTitle>
+              {userStats?.averageSci && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Out of 100
+                </p>
+              )}
             </CardHeader>
           </Card>
         </div>
+
+        {/* AI Recommendations */}
+        {recommendations.length > 0 && (
+          <Card className="mb-8 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-blue-600" />
+                <CardTitle className="text-lg">AI-Powered Recommendations</CardTitle>
+              </div>
+              <CardDescription>Personalized tips to improve your creditworthiness</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {recommendations.map((rec, index) => (
+                  <li key={index} className="flex items-start gap-3 text-sm">
+                    <Zap className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                    <span className="text-slate-700">{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Repayment Stats */}
+        {userStats && userStats.totalPayments > 0 && (
+          <Card className="mb-8 border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Heart className="h-5 w-5 text-rose-600" />
+                Repayment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">On-Time Rate</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {userStats.repaymentRate ? userStats.repaymentRate.toFixed(1) : 0}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Total Payments</p>
+                  <p className="text-2xl font-bold text-slate-900">{userStats.totalPayments}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">On-Time</p>
+                  <p className="text-2xl font-bold text-green-600">{userStats.onTimePayments}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">Late/Missed</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {userStats.latePayments + userStats.missedPayments}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Applications List */}
         <div className="space-y-6">
@@ -352,10 +481,6 @@ export default function DashboardPage() {
                 if (loanToIncome !== null && loanToIncome > 0.6) {
                   fairnessInsights.push('Loan-to-income ratio is high; a loan officer will confirm affordability before approval.')
                 }
-
-                const agentReview = scoreDetails?.agent_review
-                const coachingTips = agentReview?.coaching_tips
-                const lenderNotes = agentReview?.lender_notes
 
                 const statusMessage = app.decisionMessage ||
                   (app.status === 'APPROVED'
@@ -519,40 +644,6 @@ export default function DashboardPage() {
                               <ul className="space-y-1 text-sm text-slate-600 list-disc list-inside">
                                 {fairnessInsights.map((note) => (
                                   <li key={note}>{note}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {coachingTips && coachingTips.length > 0 && (
-                            <div className="mt-4 bg-emerald-50/50 rounded-lg p-4 border border-emerald-100">
-                              <h5 className="text-sm font-semibold text-emerald-800 mb-3 flex items-center gap-2">
-                                <Sparkles className="h-4 w-4" />
-                                Financial Coaching Tips
-                              </h5>
-                              <ul className="space-y-2 text-sm text-emerald-700">
-                                {coachingTips.map((tip: string, idx: number) => (
-                                  <li key={idx} className="flex items-start gap-2">
-                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                    <span>{tip}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {lenderNotes && lenderNotes.length > 0 && (
-                            <div className="mt-4 bg-slate-100 rounded-lg p-4 border border-slate-200">
-                              <h5 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                Lender's Risk Assessment
-                              </h5>
-                              <ul className="space-y-2 text-sm text-slate-600">
-                                {lenderNotes.map((note: string, idx: number) => (
-                                  <li key={idx} className="flex items-start gap-2">
-                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                                    <span>{note}</span>
-                                  </li>
                                 ))}
                               </ul>
                             </div>

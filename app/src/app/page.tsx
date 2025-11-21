@@ -327,12 +327,16 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link href="/register">
-                  <Button size="lg" className="h-14 px-8 rounded-full bg-white text-blue-600 hover:bg-blue-50 text-lg font-bold w-full sm:w-auto">
+                  <Button size="lg" className="h-14 px-8 rounded-full bg-white text-blue-600 hover:bg-blue-50 text-lg font-bold shadow-lg w-full sm:w-auto">
                     Get Started Now
                   </Button>
                 </Link>
                 <Link href="/contact">
-                  <Button size="lg" variant="outline" className="h-14 px-8 rounded-full border-blue-400 text-white hover:bg-blue-700 hover:text-white text-lg w-full sm:w-auto">
+                  <Button 
+                    size="lg" 
+                    variant="outline" 
+                    className="h-14 px-8 rounded-full border-2 border-white text-white hover:bg-white/10 text-lg font-semibold w-full sm:w-auto"
+                  >
                     Contact Sales
                   </Button>
                 </Link>
