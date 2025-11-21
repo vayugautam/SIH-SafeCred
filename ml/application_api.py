@@ -27,17 +27,20 @@ from typing import Dict, Any, Optional, List
 from scoring import compute_composite_score, combine_ml_and_composite, map_sci_to_riskband
 from features_direct import extract_features_from_application_data, validate_application_data
 from models_enhanced import EnhancedLoanApplication
+from nlp_utils import TransactionCategorizer, TextAnalyzer
+from agents import LoanOfficerAgent
 
 ROOT = os.path.dirname(__file__)
 MODELS_DIR = os.path.join(ROOT, "models")
 
 app = FastAPI(
-    title="SafeCred - Enhanced ML API with PostgreSQL",
-    version="4.0.0",
-    description="ML API integrated with Next.js and PostgreSQL"
+    title="SafeCred - Enhanced ML API with PostgreSQL & Agentic AI",
+    version="4.1.0",
+    description="ML API integrated with Next.js, PostgreSQL, and AI Agents"
 )
 
-# CORS Configuration
+# Initialize Agent
+loan_officer = LoanOfficerAgent()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3002", "http://localhost:3001", "http://localhost:3000"],
@@ -421,33 +424,35 @@ async def apply_direct(application: EnhancedLoanApplication):
 
         if risk_band == "Reject":
             status = "rejected"
-            message = "Unfortunately, your application does not meet our current lending criteria."
         elif no_history_manual_flag:
-            # High-income user without repayment history - mandatory manual review
             status = "manual_review"
-            message = (
-                "Your application requires manual review. As a high-income applicant without sufficient "
-                "repayment history, our team will carefully assess your creditworthiness. You may be eligible "
-                f"for a loan up to ₹{loan_offer:,.0f}."
-            )
         elif meets_low_risk_automatic:
             status = "approved"
-            message = (
-                "Congratulations! Your responsible borrowing behaviour qualifies you for the full loan offer "
-                f"of ₹{loan_offer:,.0f}."
-            )
         elif risk_band == "Low Risk":
             status = "manual_review"
-            message = (
-                "Your application is under review. You may be eligible for a loan up to "
-                f"₹{loan_offer:,.0f}."
-            )
         else:
             status = "manual_review"
-            message = (
-                "Your application is under review. You may be eligible for a loan up to "
-                f"₹{loan_offer:,.0f}."
-            )
+            
+        # --- AGENTIC AI REVIEW ---
+        # 1. NLP Analysis of Purpose
+        nlp_insights = {}
+        if application.purpose:
+            nlp_insights = TextAnalyzer.analyze_purpose(application.purpose)
+            # If purpose is risky, force manual review
+            if nlp_insights.get("risk_flag"):
+                status = "manual_review"
+                score_details["nlp_risk_flag"] = True
+
+        # 2. Agent Decision & Reasoning
+        agent_review = loan_officer.review_application(
+            application_data=application.dict(),
+            ml_result={"ml_probability": ml_prob, "final_sci": final_sci},
+            composite_result=score_details,
+            precomputed_status=status
+        )
+        
+        # Use Agent's generated message
+        message = agent_review["message"]
         
         # Save consumption data to database if available (optional - can be added later)
         # For now, we skip database saving as it's not critical for ML scoring
@@ -463,6 +468,8 @@ async def apply_direct(application: EnhancedLoanApplication):
             "final_sci": round(final_sci, 2),
             "message": message,
             "timestamp": datetime.now().isoformat(),
+            "agent_review": agent_review,  # Include full agent report
+            "nlp_insights": nlp_insights,  # Include NLP analysis
             "details": {
                 "features_extracted": len(features),
                 "consent_bonus": consent_bonus,
