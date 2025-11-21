@@ -98,12 +98,8 @@ export function FileUpload({
         formData.append('applicationId', applicationId)
       }
 
-      const token = localStorage.getItem('token')
       const response = await fetch('/api/documents', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
       })
 
@@ -146,12 +142,8 @@ export function FileUpload({
 
   const handleRemove = async (fileId: string) => {
     try {
-      const token = localStorage.getItem('token')
       const response = await fetch(`/api/documents?id=${fileId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'DELETE'
       })
 
       if (!response.ok) {

@@ -61,7 +61,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={notifications.email}
-                onCheckedChange={(checked: boolean) => setNotifications(prev => ({ ...prev, email: checked }))}
+                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, email: checked }))}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -71,7 +71,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={notifications.sms}
-                onCheckedChange={(checked: boolean) => setNotifications(prev => ({ ...prev, sms: checked }))}
+                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, sms: checked }))}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -82,7 +82,7 @@ export default function SettingsPage() {
               <Switch
                 checked={notifications.security}
                 disabled
-                onCheckedChange={(checked: boolean) => setNotifications(prev => ({ ...prev, security: checked }))}
+                onCheckedChange={(checked) => setNotifications(prev => ({ ...prev, security: checked }))}
               />
             </div>
           </CardContent>
