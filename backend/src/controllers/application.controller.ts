@@ -42,10 +42,17 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
       consentRecharge,
       consentElectricity,
       consentEducation,
+      consentBankStatement,
       bankStatements,
       rechargeData: legacyRechargeData,
       electricityBills: legacyElectricityBills,
-      educationFees: legacyEducationFees
+      educationFees: legacyEducationFees,
+      // Frontend summary objects
+      bankStatement,
+      rechargeHistory,
+      electricityBills,
+      educationFees,
+      repaymentHistory
     } = req.body;
 
     const applicationId = generateApplicationId();
@@ -81,42 +88,77 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
         consentRecharge: consentRecharge || consentDataSharing || false,
         consentElectricity: consentElectricity || consentDataSharing || false,
         consentEducation: consentEducation || consentDataSharing || false,
+        consentBankStatement: consentBankStatement || false,
         status: 'PENDING',
         
         // Store consumption data in related tables
-        ...(monthlyElectricityAmount > 0 && {
+        // 1. Electricity
+        ...((electricityBills?.avgPayment > 0 || monthlyElectricityAmount > 0) && {
           electricityBills: {
             create: [{
               month: new Date().toISOString().substring(0, 7), // Format: "2025-10"
-              amount: monthlyElectricityAmount,
-              units: monthlyElectricityUnits,
+              amount: Number(electricityBills?.avgPayment || monthlyElectricityAmount),
+              units: Number(electricityBills?.avgPayment || monthlyElectricityAmount) / 6.0, // Approx units
               paidOnTime: true
             }]
           }
         }),
         
-        ...(monthlyRechargeAmount > 0 && {
+        // 2. Recharge
+        ...((rechargeHistory?.avgAmount > 0 || monthlyRechargeAmount > 0) && {
           rechargeData: {
-            create: [{
-              date: new Date(),
-              amount: monthlyRechargeAmount,
+            create: Array(Number(rechargeHistory?.frequency || 1)).fill(0).map((_, i) => ({
+              date: new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000), // Spread over months
+              amount: Number(rechargeHistory?.avgAmount || monthlyRechargeAmount),
               operator: 'User Provided'
-            }]
+            }))
           }
         }),
         
-        ...(monthlyEducationExpense > 0 && {
+        // 3. Education
+        ...((educationFees?.avgFee > 0 || monthlyEducationExpense > 0) && {
           educationFees: {
             create: [{
-              month: new Date().toISOString().substring(0, 7), // Format: "2025-10"
-              amount: monthlyEducationExpense,
-              institution: 'User Provided',
-              paidOnTime: true
+              academicYear: '2024-25',
+              amount: Number(educationFees?.avgFee || monthlyEducationExpense),
+              institutionName: 'User Provided',
+              dueDate: new Date(),
+              paidDate: new Date(),
+              isPaid: true,
+              isLate: false
             }]
           }
         }),
         
-        // Create related documents from legacy data if provided
+        // 4. Bank Statement (Create dummy entries to represent summary)
+        ...((bankStatement?.monthlyCredits > 0) && {
+          bankStatements: {
+            create: [{
+              date: new Date(),
+              description: 'Salary/Income Credit',
+              credit: Number(bankStatement.monthlyCredits),
+              debit: 0,
+              balance: Number(bankStatement.avgBalance || 0),
+              category: 'salary'
+            }]
+          }
+        }),
+
+        // 5. Repayment History (Store in related table)
+        ...((repaymentHistory?.previousLoansCount > 0) && {
+          repaymentHistory: {
+            create: [{
+              emiNumber: 1,
+              emiAmount: 0, // Unknown
+              dueDate: new Date(),
+              isPaid: true,
+              isLate: false,
+              daysLate: Number(repaymentHistory.avgPaymentDelayDays || 0)
+            }]
+          }
+        }),
+        
+        // Create related documents from legacy data if provided (keeping existing logic)
         ...(bankStatements?.length > 0 && {
           bankStatements: {
             create: bankStatements.map((stmt: any) => ({
