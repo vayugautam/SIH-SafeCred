@@ -283,6 +283,11 @@ export default function ProfilePage() {
                     I have children
                   </Label>
                 </div>
+                {profile.hasChildren && (
+                   <p className="text-sm text-blue-600 ml-6 bg-blue-50 p-2 rounded border border-blue-100">
+                     Tip: Sharing education fee payment history can significantly boost your credit score.
+                   </p>
+                )}
 
                 <div className="flex items-center space-x-2">
                   <Checkbox
@@ -296,6 +301,11 @@ export default function ProfilePage() {
                     I belong to a socially disadvantaged group
                   </Label>
                 </div>
+                {profile.isSociallyDisadvantaged && (
+                   <p className="text-sm text-emerald-600 ml-6 bg-emerald-50 p-2 rounded border border-emerald-100">
+                     SafeCred applies a fairness bonus to your credit score to ensure equal access to credit.
+                   </p>
+                )}
               </div>
             </div>
 
