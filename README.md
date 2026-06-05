@@ -1,3 +1,43 @@
+SafeCred — Repository Setup
+==========================
+
+Quick start for contributors cloning this repo:
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/vayugautam/SIH-SafeCred.git
+   cd SIH-SafeCred
+   ```
+
+2. Frontend (Next.js) setup:
+
+   ```bash
+   cd app
+   cp .env.example .env   # update values as needed
+   npm install
+   npm run build
+   npm run dev            # or npm start after build
+   ```
+
+3. Backend (API) setup:
+
+   ```bash
+   cd backend
+   cp .env.example .env   # update values (DATABASE_URL, JWT secrets)
+   npm install
+   npm run build
+   npm run start          # runs dist/server.js
+   ```
+
+4. ML models:
+
+   - Model binaries are ignored from the repo. See `ml/README.md` for instructions to train or provide pre-trained models.
+
+Notes:
+- `.gitignore` excludes binary artifacts and caches. The repository contains infrastructure and seed scripts for Prisma; run `prisma:migrate` and `prisma:seed` from the respective folders when configuring databases.
+
+If you want, I can add a script to automatically download model artifacts from a URL or add a Docker Compose for a one-command dev environment.
 # SafeCred - AI-Assisted Credit Scoring for Microfinance
 
 ## 🎯 Problem Statement
