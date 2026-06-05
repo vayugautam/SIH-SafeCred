@@ -286,8 +286,9 @@ async def apply_direct(application: EnhancedLoanApplication):
             f.write(f"\n\n=== NEW REQUEST at {datetime.now()} ===\n")
             f.write(f"Application ID: {application.application_id}\n")
         
+        application_payload = application.model_dump()
         print(f"[ML API] Received application: {application.application_id}")
-        print(f"[ML API] Application data: {application.dict()}")
+        print(f"[ML API] Application data: {application_payload}")
         
         # Load model if not loaded
         if not load_ml_model():
@@ -299,7 +300,7 @@ async def apply_direct(application: EnhancedLoanApplication):
             raise HTTPException(status_code=500, detail="ML model not loaded")
         
         # Validate application data
-        is_valid, error_message = validate_application_data(application.dict())
+        is_valid, error_message = validate_application_data(application_payload)
         if not is_valid:
             print(f"[ML API] Validation failed: {error_message}")
             raise HTTPException(
@@ -313,20 +314,12 @@ async def apply_direct(application: EnhancedLoanApplication):
             f.write(f"About to extract features...\n")
         
         # Extract features
-        features = extract_features_from_application_data(application.dict())
+        features = extract_features_from_application_data(application_payload)
         
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(f"Extracted {len(features)} features\n")
         
         print(f"[ML API] Extracted {len(features)} features")
-        
-        # Prepare feature vector
-        feature_vector = pd.DataFrame([features])[feature_order]
-        feature_vector_scaled = scaler.transform(feature_vector)
-        
-        # ML Prediction
-        ml_prob = clf.predict_proba(feature_vector_scaled)[0][1]
-        print(f"[ML API] ML Probability: {ml_prob}")
         
         # Composite Score
         composite_result = compute_composite_score(features)
@@ -337,6 +330,15 @@ async def apply_direct(application: EnhancedLoanApplication):
             score_details = {}
         
         print(f"[ML API] Composite Score: {composite_score}")
+        features["composite_score"] = composite_score
+        
+        # Prepare feature vector after composite_score is populated.
+        feature_vector = pd.DataFrame([features])[feature_order]
+        feature_vector_scaled = scaler.transform(feature_vector)
+        
+        # ML Prediction
+        ml_prob = clf.predict_proba(feature_vector_scaled)[0][1]
+        print(f"[ML API] ML Probability: {ml_prob}")
         
         # Combine scores
         combine_result = combine_ml_and_composite(
@@ -345,7 +347,7 @@ async def apply_direct(application: EnhancedLoanApplication):
             ml_weight=0.6
         )
         if isinstance(combine_result, tuple):
-            final_sci = combine_result[0]  # Extract the score from tuple
+            final_sci = combine_result[0]
             combine_details = combine_result[1] if len(combine_result) > 1 else {}
         else:
             final_sci = combine_result
@@ -353,15 +355,8 @@ async def apply_direct(application: EnhancedLoanApplication):
         
         print(f"[ML API] Final SCI: {final_sci}")
         
-        # Ensure approved profiles have SCI >= 80 when ML confidence and composite strength are high
-        if ml_prob >= 0.82 and composite_score >= 60 and final_sci < 80:
-            combined_before = final_sci
-            final_sci = 80.0
-            combine_details["final_floor_adjustment"] = {
-                "reason": "High ML confidence with strong composite score",
-                "previous_final_sci": round(combined_before, 2),
-                "adjusted_final_sci": final_sci
-            }
+        # NOTE: No SCI floor override — the raw final_sci is returned as-is.
+        # Approval decisions are made by the meets_low_risk_automatic logic below.
         
         # Risk Band
         risk_result = map_sci_to_riskband(
@@ -381,18 +376,36 @@ async def apply_direct(application: EnhancedLoanApplication):
             "High Risk": 6000,
             "Reject": 0
         }
-        
         base_offer = base_offers.get(risk_band, 0)
-        consent_bonus = 0
+        components = score_details.get("components", {})
+        proxy_quality_bonus = 0
+        proxy_quality_reasons = []
         
-        if application.consent_recharge:
-            consent_bonus += 2000
-        if application.consent_electricity:
-            consent_bonus += 2000
-        if application.consent_education and application.has_children:
-            consent_bonus += 3000
+        if risk_band != "Reject":
+            if (
+                application.consent_recharge and
+                features.get("recharge_recharge_count", 0) > 0 and
+                components.get("recharge_score", 0) >= 0.35
+            ):
+                proxy_quality_bonus += 1500
+                proxy_quality_reasons.append("healthy recharge pattern")
+            if (
+                application.consent_electricity and
+                features.get("elec_bills_count", 0) > 0 and
+                components.get("elec_consistency_score", 0) >= 0.45
+            ):
+                proxy_quality_bonus += 1500
+                proxy_quality_reasons.append("consistent utility payments")
+            if (
+                application.consent_education and
+                application.has_children and
+                features.get("edu_records", 0) > 0 and
+                components.get("education_score", 0) >= 0.6
+            ):
+                proxy_quality_bonus += 2000
+                proxy_quality_reasons.append("consistent education fee payments")
         
-        loan_offer = base_offer + consent_bonus
+        loan_offer = min(float(application.loan_amount), base_offer + proxy_quality_bonus) if base_offer else 0
         
         # Determine status (NBCFDC is non-profit - no interest rates)
         loan_to_income_ratio = 0.0
@@ -445,7 +458,7 @@ async def apply_direct(application: EnhancedLoanApplication):
 
         # 2. Agent Decision & Reasoning
         agent_review = loan_officer.review_application(
-            application_data=application.dict(),
+            application_data=application_payload,
             ml_result={"ml_probability": ml_prob, "final_sci": final_sci},
             composite_result=score_details,
             precomputed_status=status
@@ -472,7 +485,9 @@ async def apply_direct(application: EnhancedLoanApplication):
             "nlp_insights": nlp_insights,  # Include NLP analysis
             "details": {
                 "features_extracted": len(features),
-                "consent_bonus": consent_bonus,
+                "consent_bonus": proxy_quality_bonus,
+                "proxy_quality_bonus": proxy_quality_bonus,
+                "proxy_quality_reasons": proxy_quality_reasons,
                 "base_offer": base_offer,
                 "score_breakdown": score_details,
                 "combine_details": combine_details,

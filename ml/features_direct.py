@@ -30,12 +30,16 @@ def extract_features_from_application_data(application_data: dict) -> dict:
     features["consent_recharge"] = 1 if application_data.get("consent_recharge", False) else 0
     features["consent_electricity"] = 1 if application_data.get("consent_electricity", False) else 0
     features["consent_education"] = 1 if application_data.get("consent_education", False) else 0
+    features["consent_bank"] = 1 if (
+        application_data.get("consent_bank", False) or application_data.get("consent_bank_statement", False)
+    ) else 0
     
     # ==================== BANK STATEMENT DATA (aligned with model) ====================
     bank_data = application_data.get("bank_statement", {})
     declared_income = features["declared_income"]
     
-    if bank_data and bank_data.get("monthly_credits"):
+    if features["consent_bank"] and bank_data and bank_data.get("monthly_credits"):
+        features["_has_real_bank_data"] = True
         features["bank_monthly_credits"] = bank_data.get("monthly_credits", declared_income)
         features["bank_salary_median"] = bank_data.get("monthly_credits", declared_income)
         features["bank_salary_std"] = bank_data.get("monthly_credits", 0) * 0.1  # 10% std
@@ -46,7 +50,8 @@ def extract_features_from_application_data(application_data: dict) -> dict:
         features["bank_on_time_ratio"] = 1.0
         features["bank_num_months"] = 6
     else:
-        # Defaults for new users
+        # Defaults for new users — mark as NOT having real bank data
+        features["_has_real_bank_data"] = False
         features["bank_monthly_credits"] = declared_income
         features["bank_salary_median"] = declared_income
         features["bank_salary_std"] = declared_income * 0.1
@@ -156,10 +161,21 @@ def extract_features_from_application_data(application_data: dict) -> dict:
     features["lifestyle_index"] = lifestyle_index
     
     # Suspicion score (income vs lifestyle mismatch)
+    # Use dynamic income barrier from trained model instead of hardcoded value
+    import os as _os, json as _json
+    _ROOT = _os.path.dirname(__file__)
+    _META_PATH = _os.path.join(_ROOT, "models", "model_metadata.json")
+    try:
+        with open(_META_PATH, "r") as _f:
+            _meta = _json.load(_f)
+            _income_barrier = float(_meta.get("dynamic_income_barrier", 15000))
+    except Exception:
+        _income_barrier = 15000
+
     declared_income = features["declared_income"]
-    if declared_income < 15000:
+    if declared_income < _income_barrier:
         features["suspicion_score"] = round(
-            min(lifestyle_index * (15000 / max(1000, declared_income)), 1.0), 3
+            min(lifestyle_index * (_income_barrier / max(1000, declared_income)), 1.0), 3
         )
     else:
         features["suspicion_score"] = round(lifestyle_index * 0.5, 3)

@@ -57,6 +57,10 @@ class RepaymentHistory(BaseModel):
     late_count: Optional[int] = Field(0, description="Number of late repayments")
     missed_count: Optional[int] = Field(0, description="Number of missed repayments")
     avg_repayment_ratio: Optional[float] = Field(0.5, ge=0, le=1, description="Average repayment ratio")
+    previous_loans_count: Optional[int] = Field(0, description="Number of previous loans")
+    on_time_ratio: Optional[float] = Field(None, ge=0, le=1, description="On-time payment ratio")
+    avg_payment_delay_days: Optional[float] = Field(0, ge=0, description="Average payment delay in days")
+    time_since_last_loan: Optional[int] = Field(None, description="Months since last loan")
 
 
 class EnhancedLoanApplication(BaseModel):
@@ -88,6 +92,7 @@ class EnhancedLoanApplication(BaseModel):
     consent_electricity: bool = Field(False, description="Consent to share electricity data")
     consent_education: bool = Field(False, description="Consent to share education data")
     consent_bank: bool = Field(False, description="Consent to share bank statement")
+    consent_bank_statement: bool = Field(False, description="Backward-compatible bank statement consent alias")
     
     # ==================== OPTIONAL PROXY DATA ====================
     bank_statement: Optional[BankStatementData] = Field(None, description="Bank statement summary")

@@ -9,6 +9,7 @@ Enhanced SafeCred training script with dynamic poverty barrier.
 - Auto-adjusts barrier upward for socially disadvantaged groups
 - Includes weighted percentile logic for fairness
 - Trains RandomForest baseline model
+- Computes derived features (debt_to_income, lifestyle_index, etc.) matching inference
 """
 
 import os
@@ -61,8 +62,7 @@ def compute_dynamic_barrier(df: pd.DataFrame) -> float:
         cumsum = (sorted_df["repay_weight"] / sorted_df["repay_weight"].sum()).cumsum()
         cutoff_index = (cumsum - 0.35).abs().idxmin()
         barrier_value = sorted_df.loc[cutoff_index, "declared_income"]
-        import numpy as np
-        import datetime
+
         # Only allow int or float, not complex, date, timedelta, or None
         if isinstance(barrier_value, np.generic):
             value = barrier_value.item()
@@ -134,6 +134,56 @@ def train_and_save():
     if "suspicion_score" in df.columns:
         df["suspicion_score"] = df["suspicion_score"].fillna(0)
 
+    # --- Step 4b: Add derived features matching features_direct.py ---
+    print("🔧 Computing derived features ...")
+
+    # Repayment features from loan history aggregation
+    if "previous_loans_count" not in df.columns:
+        df["previous_loans_count"] = 0
+    if "previous_defaults" not in df.columns:
+        df["previous_defaults"] = 0
+    if "avg_prev_repayment_ratio" not in df.columns:
+        df["avg_prev_repayment_ratio"] = 0.5
+    if "time_since_last_loan" not in df.columns:
+        df["time_since_last_loan"] = 999
+
+    # on_time_ratio and avg_payment_delay_days (derive from repayment ratio)
+    if "on_time_ratio" not in df.columns:
+        df["on_time_ratio"] = df["avg_prev_repayment_ratio"].fillna(0.5)
+    if "avg_payment_delay_days" not in df.columns:
+        df["avg_payment_delay_days"] = (1.0 - df["on_time_ratio"].fillna(0.5)) * 15.0
+
+    # debt_to_income_ratio
+    monthly_emi = df["loan_amount"] / df["tenure"].clip(lower=1)
+    df["debt_to_income_ratio"] = (monthly_emi / df["declared_income"].clip(lower=1000)).round(3)
+
+    # avg_monthly_saving
+    df["avg_monthly_saving"] = df["declared_income"] - monthly_emi
+
+    # lifestyle_index (proxy from available consumption data)
+    recharge_signal = np.zeros(len(df))
+    elec_signal = np.zeros(len(df))
+    edu_signal = np.zeros(len(df))
+
+    for col_prefix, signal_arr, divisor in [
+        ("recharge_avg_recharge_amount", recharge_signal, 3600.0),
+        ("elec_avg_amount", elec_signal, 2000.0),
+        ("edu_avg_fee_amount", edu_signal, 5000.0),
+    ]:
+        if col_prefix in df.columns:
+            signal_arr[:] = np.clip(df[col_prefix].fillna(0).values / divisor, 0, 1)
+
+    df["lifestyle_index"] = (0.3 * recharge_signal + 0.4 * elec_signal + 0.3 * edu_signal).round(3)
+
+    # suspicion_score
+    _tmp_barrier = 15000.0
+    if "suspicion_score" not in df.columns or df["suspicion_score"].sum() == 0:
+        df["suspicion_score"] = np.where(
+            df["declared_income"] < _tmp_barrier,
+            np.clip(df["lifestyle_index"] * (_tmp_barrier / df["declared_income"].clip(lower=1000)), 0, 1),
+            df["lifestyle_index"] * 0.5
+        ).round(3)
+
     # --- Step 5: Compute dynamic income barrier ---
     print("\n📈 Calculating dynamic poor-income barrier ...")
     dynamic_barrier = compute_dynamic_barrier(df)
@@ -141,7 +191,7 @@ def train_and_save():
     # --- Step 6: Prepare training data ---
     print("🧠 Preparing training matrix ...")
     df.fillna(0, inplace=True)
-    X = df.drop(columns=["user_id", "target"], errors="ignore")
+    X = df.drop(columns=["user_id", "target", "repay_weight"], errors="ignore")
     y = df["target"]
 
     X_numeric = X.select_dtypes(include=["number"])
@@ -183,7 +233,7 @@ def train_and_save():
     joblib.dump(feature_names, feature_path)
 
     meta = {
-        "version": "2.1.0",
+        "version": "2.2.0",
         "model": "RandomForestClassifier",
         "train_time": datetime.now().isoformat(),
         "n_samples": len(df),
@@ -193,7 +243,15 @@ def train_and_save():
         "logic": {
             "percentile_base": 35,
             "repayment_weight": True,
-            "socio_adjustment": True
+            "socio_adjustment": True,
+            "derived_features": [
+                "debt_to_income_ratio",
+                "avg_monthly_saving",
+                "lifestyle_index",
+                "suspicion_score",
+                "on_time_ratio",
+                "avg_payment_delay_days",
+            ]
         }
     }
 
@@ -203,7 +261,7 @@ def train_and_save():
     print(f"\n✅ Model and metadata saved in {MODELS_DIR}")
     print(f"   • safecred_model.pkl")
     print(f"   • scaler.pkl")
-    print(f"   • feature_order.pkl")
+    print(f"   • feature_order.pkl ({len(feature_names)} features)")
     print(f"   • model_metadata.json (includes data-driven barrier ₹{dynamic_barrier})")
 
     # --- Step 10: Sample verification ---

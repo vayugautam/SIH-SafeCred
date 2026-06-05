@@ -108,8 +108,12 @@ def compute_subscores(features: Dict, caps: Optional[Dict] = None) -> Dict:
 
     # --- Consumption Subcomponents ---
     bill_consistency = features.get("bill_consistency")
+    if bill_consistency is None:
+        bill_consistency = features.get("elec_bill_consistency")
     elec_consistency_score = 1.0 - _clip01((bill_consistency or 0.0) / caps["bill_consistency_cap"])
     recharge_freq = features.get("recharge_freq_per_month")
+    if recharge_freq is None:
+        recharge_freq = features.get("recharge_recharge_freq_per_month")
     recharge_score = _clip01((recharge_freq or 0.0) / caps["recharge_freq_cap"])
 
     # --- Education proxy (only active if user has children) ---
@@ -139,7 +143,7 @@ def compute_subscores(features: Dict, caps: Optional[Dict] = None) -> Dict:
     # --- Adjust pillar weights based on income & data availability ---
     # 🎯 ENHANCED LOGIC: Different evaluation strategies for different income groups
 
-    has_bank_data = bool(monthly and avg_balance)
+    has_bank_data = features.get("_has_real_bank_data", bool(monthly and avg_balance))
     income = income_baseline or 0.0
     loan_amount = features.get("loan_amount", 0)
 
@@ -224,10 +228,10 @@ def compute_subscores(features: Dict, caps: Optional[Dict] = None) -> Dict:
             }
         
         # Stricter loan-to-income enforcement for high earners
-        if loan_to_income_ratio > 0.8:  # Asking for >80% of monthly income
-            fraud_risk_penalty += 0.20
-        elif loan_to_income_ratio > 1.0:  # Asking for more than monthly income
+        if loan_to_income_ratio > 1.0:  # Asking for more than monthly income
             fraud_risk_penalty += 0.30  # Severe penalty - likely fraud
+        elif loan_to_income_ratio > 0.8:  # Asking for >80% of monthly income
+            fraud_risk_penalty += 0.20
 
     if not has_bank_data and consent_depth >= 0.5:
         fair_lending_bonus += 0.02
@@ -437,20 +441,26 @@ def combine_ml_and_composite(ml_prob: float, composite_score: float, ml_weight: 
     
     return final_sci, details
 
-def map_sci_to_riskband(final_sci: float, socio_flag: int = 0, thresholds: Tuple[int, int] = (70, 50)) -> Tuple[str, str]:
+def map_sci_to_riskband(final_sci: float, socio_flag: int = 0, thresholds: Tuple[int, ...] = (70, 50, 40)) -> Tuple[str, str]:
     """
     Map final SCI to risk bands with Need (socio_flag).
-    thresholds: (low_risk_threshold, medium_risk_threshold)
+    thresholds: (low_risk_threshold, medium_risk_threshold, reject_threshold)
     Returns tuple of (risk_band, need_label) e.g., ("Low Risk", "High Need")
     """
-    high_thr, med_thr = thresholds
+    if len(thresholds) >= 3:
+        high_thr, med_thr, reject_thr = thresholds[0], thresholds[1], thresholds[2]
+    else:
+        high_thr, med_thr = thresholds[0], thresholds[1]
+        reject_thr = 40  # default reject threshold
     need = "High Need" if int(socio_flag) else "Low Need"
     if final_sci >= high_thr:
         band = "Low Risk"
     elif final_sci >= med_thr:
         band = "Medium Risk"
-    else:
+    elif final_sci >= reject_thr:
         band = "High Risk"
+    else:
+        band = "Reject"
     return band, need
 
 # Optional helper to aggregate loan history DataFrame for a user
