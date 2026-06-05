@@ -6,14 +6,6 @@ import axios from 'axios';
 
 const prisma = new PrismaClient();
 
-// Whitelisted borrowers with proven excellent repayment histories
-const EXCELLENT_HISTORY_USERS = new Set([
-  'sneha.patel@example.com',
-  'rahul.sharma@example.com',
-  'priya.singh@example.com',
-  'amit.kumar@example.com',
-  'anjali.verma@example.com'
-]);
 
 // Generate unique application ID
 const generateApplicationId = (): string => {
@@ -313,6 +305,7 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
         rechargeData: true,
         electricityBills: true,
         educationFees: true,
+        repaymentHistory: true,
         user: true
       }
     });
@@ -419,31 +412,31 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
         })()
       : undefined;
 
-    const hasExcellentHistory = EXCELLENT_HISTORY_USERS.has((application.user.email || '').toLowerCase());
+    // Build repayment history from actual database records only
+    const repaymentRecords = (application as any).repaymentHistory || [];
+    const repaymentHistorySummary = repaymentRecords.length > 0
+      ? (() => {
+          const onTimeCount = repaymentRecords.filter((r: any) => r.isPaid && !r.isLate).length;
+          const lateCount = repaymentRecords.filter((r: any) => r.isPaid && r.isLate).length;
+          const missedCount = repaymentRecords.filter((r: any) => !r.isPaid).length;
+          const total = repaymentRecords.length;
+          const avgDelayDays = repaymentRecords.reduce(
+            (sum: number, r: any) => sum + (r.daysLate || 0), 0
+          ) / Math.max(1, total);
 
-    const repaymentHistorySummary = hasExcellentHistory
-      ? {
-          ontime_count: 35,
-          late_count: 1,
-          missed_count: 0,
-          avg_repayment_ratio: 0.97,
-          previous_loans_count: 3,
-          on_time_ratio: 0.97,
-          avg_payment_delay_days: 1,
-          time_since_last_loan: 6,
-          previous_defaults: 0
-        }
-      : {
-          ontime_count: Math.max(6, application.rechargeData.length * 2),
-          late_count: 1,
-          missed_count: 0,
-          avg_repayment_ratio: 0.85,
-          previous_loans_count: 1,
-          on_time_ratio: 0.85,
-          avg_payment_delay_days: 5,
-          time_since_last_loan: 12,
-          previous_defaults: 0
-        };
+          return {
+            ontime_count: onTimeCount,
+            late_count: lateCount,
+            missed_count: missedCount,
+            avg_repayment_ratio: total > 0 ? round(onTimeCount / total) : 0.5,
+            previous_loans_count: total,
+            on_time_ratio: total > 0 ? round(onTimeCount / total) : 0.5,
+            avg_payment_delay_days: round(avgDelayDays),
+            time_since_last_loan: 12,
+            previous_defaults: missedCount
+          };
+        })()
+      : undefined; // No history → ML treats as new user
 
     const mlPayload = {
       name: application.user.name,
@@ -457,7 +450,7 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
       loan_amount: application.loanAmount,
       tenure_months: application.tenureMonths,
       purpose: application.purpose || 'Personal',
-      existing_loan_amt: hasExcellentHistory ? application.loanAmount * 0.4 : 0,
+      existing_loan_amt: 0,
       consent_recharge: application.consentRecharge,
       consent_electricity: application.consentElectricity,
       consent_education: application.consentEducation,
@@ -487,41 +480,16 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
 
       const mlResult = mlResponse.data;
 
-      // Normalize ML outputs for consistent approvals
-      const loanToIncomeRatio = application.declaredIncome > 0
-        ? application.loanAmount / application.declaredIncome
-        : 1;
-
+      // Store ML outputs exactly as returned by the guarded ML decision layer.
       let finalSci = Number(mlResult.final_sci ?? 0);
       const mlProbability = Number(mlResult.ml_probability ?? 0);
       const compositeScore = Number(mlResult.composite_score ?? 0);
       const riskBand = mlResult.risk_band;
       const needCategory = mlResult.risk_category || riskBand;
 
-      const qualifiesHighConfidence = (
-        mlProbability >= 0.82 &&
-        compositeScore >= 60 &&
-        loanToIncomeRatio <= 0.6
-      );
-
-      if (qualifiesHighConfidence && finalSci < 80) {
-        finalSci = 80;
-      }
-
       let appStatus: 'APPROVED' | 'REJECTED' | 'MANUAL_REVIEW' = 'MANUAL_REVIEW';
       if (mlResult.status === 'approved') appStatus = 'APPROVED';
       else if (mlResult.status === 'rejected') appStatus = 'REJECTED';
-
-      const qualifiesAutoApprove = (
-        riskBand === 'Low Risk' &&
-        (appStatus === 'APPROVED' || qualifiesHighConfidence || finalSci >= 80)
-      );
-
-      if (qualifiesAutoApprove && appStatus !== 'REJECTED') {
-        appStatus = 'APPROVED';
-        mlResult.status = 'approved';
-        mlResult.message = `Congratulations! Your responsible borrowing qualifies you for ₹${Number(mlResult.loan_offer || application.loanAmount).toLocaleString()}.`;
-      }
 
       if (appStatus === 'MANUAL_REVIEW' && riskBand === 'Low Risk') {
         mlResult.message = `Your application is under review. You may be eligible for a loan up to ₹${Number(mlResult.loan_offer || application.loanAmount).toLocaleString()}.`;
@@ -548,8 +516,7 @@ export const submitApplication = async (req: AuthRequest, res: Response) => {
           finalSci: finalSci,
           riskBand: riskBand,
           needCategory: needCategory,
-          loanOffer: mlResult.loan_offer,
-          // interestRate removed - NBCFDC is non-profit (no interest)
+          // loanOffer and interestRate removed - NBCFDC is non-profit (no interest)
           scoreDetails: mlResult.details ?? undefined,
           decisionMessage: mlResult.message,
           processedAt: new Date()
