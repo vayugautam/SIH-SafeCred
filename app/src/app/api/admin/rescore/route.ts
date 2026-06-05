@@ -17,6 +17,13 @@ const requestSchema = z.object({
 
 type Numeric = number | null | undefined
 
+const normalizeRiskBand = (riskBand?: string | null) =>
+  riskBand?.replace(' ', '_').toUpperCase() ?? null
+
+const statusFromMl = (status?: string) =>
+  status === 'approved' ? 'APPROVED' :
+  status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW'
+
 const avg = (values: Numeric[]): number | undefined => {
   const filtered = values.filter((v): v is number => typeof v === 'number' && Number.isFinite(v))
   if (!filtered.length) return undefined
@@ -226,10 +233,11 @@ export async function POST(request: NextRequest) {
           loan_amount: appRecord.loanAmount,
           tenure_months: appRecord.tenureMonths,
           purpose: appRecord.purpose || 'Partner Upload',
-          existing_loan_amt: appRecord.approvedLoanAmount || 0,
+          existing_loan_amt: 0,
           consent_recharge: appRecord.consentRecharge,
           consent_electricity: appRecord.consentElectricity,
           consent_education: appRecord.consentEducation,
+          consent_bank: appRecord.consentBankStatement,
           consent_bank_statement: appRecord.consentBankStatement,
           application_id: appRecord.applicationId,
           bank_statement: bankMetrics,
@@ -244,7 +252,7 @@ export async function POST(request: NextRequest) {
         })
 
         const mlResult = mlResponse.data
-        const normalizedRiskBand = mlResult.risk_band?.replace(' ', '_').toUpperCase()
+        const normalizedRiskBand = normalizeRiskBand(mlResult.risk_band)
         const riskNeedLabel = mlResult.risk_category
           ? `${mlResult.risk_category} + ${mlResult.risk_band}`
           : `${appRecord.user?.isSociallyDisadvantaged ? 'High Need' : 'Low Need'} + ${mlResult.risk_band ?? 'Unclassified'}`
@@ -259,8 +267,7 @@ export async function POST(request: NextRequest) {
           approvedLoanAmount: mlResult.loan_offer,
           decisionMessage: mlResult.message,
           scoreDetails: mlResult.details ?? null,
-          status: mlResult.status === 'approved' ? 'APPROVED' :
-                  mlResult.status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW',
+          status: statusFromMl(mlResult.status),
           processedAt: new Date(),
         }
 

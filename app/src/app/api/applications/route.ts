@@ -66,6 +66,24 @@ const applicationSchema = z.object({
 
 const ML_API_URL = process.env.ML_API_URL || 'http://localhost:8002'
 
+const boundedCount = (value: number | undefined, max = 24) => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return 0
+  return Math.min(max, Math.max(0, Math.round(value)))
+}
+
+const monthsAgo = (index: number) => {
+  const date = new Date()
+  date.setMonth(date.getMonth() - index)
+  return date
+}
+
+const normalizeRiskBand = (riskBand?: string | null) =>
+  riskBand?.replace(' ', '_').toUpperCase() ?? null
+
+const statusFromMl = (status?: string) =>
+  status === 'approved' ? 'APPROVED' :
+  status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -103,7 +121,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Create application in database first
+    const rechargeCount = boundedCount(rechargeHistory?.frequency)
+    const electricityCount = boundedCount(electricityBills?.frequency)
+    const educationCount = boundedCount(educationFees?.frequency)
+    const electricityOnTimeCount = Math.round(electricityCount * (electricityBills?.consistency ?? 1))
+    const educationOnTimeCount = Math.round(educationCount * (educationFees?.onTimeRatio ?? educationFees?.consistency ?? 1))
+
+    // Create application and persist user-provided consumption evidence for later re-scoring.
     const application = await prisma.application.create({
       data: {
         userId: user.id,
@@ -116,6 +140,70 @@ export async function POST(request: NextRequest) {
         consentEducation,
         consentBankStatement,
         status: 'PROCESSING',
+        ...(consentBankStatement && bankStatement?.monthlyCredits && {
+          bankStatements: {
+            create: [{
+              date: new Date(),
+              description: 'User provided income summary',
+              credit: bankStatement.monthlyCredits,
+              debit: 0,
+              balance: bankStatement.avgBalance ?? 0,
+              category: 'income_summary',
+            }],
+          },
+        }),
+        ...(consentRecharge && rechargeCount > 0 && rechargeHistory?.avgAmount && {
+          rechargeData: {
+            create: Array.from({ length: rechargeCount }, (_, index) => ({
+              date: monthsAgo(index),
+              amount: rechargeHistory.avgAmount ?? 0,
+              operator: 'User Provided',
+            })),
+          },
+        }),
+        ...(consentElectricity && electricityCount > 0 && electricityBills?.avgPayment && {
+          electricityBills: {
+            create: Array.from({ length: electricityCount }, (_, index) => {
+              const billDate = monthsAgo(index)
+              const dueDate = new Date(billDate)
+              dueDate.setDate(dueDate.getDate() + 15)
+              const paidOnTime = index < electricityOnTimeCount
+              const paidDate = new Date(dueDate)
+              if (!paidOnTime) paidDate.setDate(paidDate.getDate() + 7)
+
+              return {
+                month: `${billDate.getFullYear()}-${String(billDate.getMonth() + 1).padStart(2, '0')}`,
+                billDate,
+                dueDate,
+                amount: electricityBills.avgPayment ?? 0,
+                unitsConsumed: (electricityBills.avgPayment ?? 0) / 6,
+                paidDate,
+                isPaid: true,
+                isLate: !paidOnTime,
+              }
+            }),
+          },
+        }),
+        ...(consentEducation && user.hasChildren && educationCount > 0 && educationFees?.avgFee && {
+          educationFees: {
+            create: Array.from({ length: educationCount }, (_, index) => {
+              const dueDate = monthsAgo(index)
+              const paidOnTime = index < educationOnTimeCount
+              const paidDate = new Date(dueDate)
+              if (!paidOnTime) paidDate.setDate(paidDate.getDate() + 10)
+
+              return {
+                academicYear: `${dueDate.getFullYear()}-${String((dueDate.getFullYear() + 1) % 100).padStart(2, '0')}`,
+                amount: educationFees.avgFee ?? 0,
+                dueDate,
+                paidDate,
+                isPaid: true,
+                isLate: !paidOnTime,
+                institutionName: 'User Provided',
+              }
+            }),
+          },
+        }),
       },
     })
 
@@ -157,8 +245,8 @@ export async function POST(request: NextRequest) {
     })
 
     const onTimeRatio = totalPayments > 0 ? onTimePayments / totalPayments : 0
-  const avgDelayDays = totalPayments > 0 ? totalDelayDays / totalPayments : 0
-  const avgPrevRepaymentRatio = totalPayments > 0 ? onTimePayments / totalPayments : 0
+    const avgDelayDays = totalPayments > 0 ? totalDelayDays / totalPayments : 0
+    const avgPrevRepaymentRatio = totalPayments > 0 ? onTimePayments / totalPayments : 0
 
     // Calculate time since last loan safely
     let timeSinceLastLoan = 999 // Default for users with no previous loans
@@ -176,32 +264,16 @@ export async function POST(request: NextRequest) {
     // Prepare data for ML API with historical context
     const existingLoanAmt = typeof existingLoanAmount === 'number' ? existingLoanAmount : totalPreviousLoanAmount
 
-    const mergedRepaymentHistory = {
-      on_time_ratio:
-        typeof repaymentHistoryInput?.onTimeRatio === 'number'
-          ? repaymentHistoryInput.onTimeRatio
-          : onTimeRatio,
-      avg_payment_delay_days:
-        typeof repaymentHistoryInput?.avgPaymentDelayDays === 'number'
-          ? repaymentHistoryInput.avgPaymentDelayDays
-          : avgDelayDays,
-      missed_count:
-        typeof repaymentHistoryInput?.missedCount === 'number'
-          ? repaymentHistoryInput.missedCount
-          : totalDefaults,
-      avg_repayment_ratio:
-        typeof repaymentHistoryInput?.onTimeRatio === 'number'
-          ? repaymentHistoryInput.onTimeRatio
-          : avgPrevRepaymentRatio,
-      previous_loans_count:
-        typeof repaymentHistoryInput?.previousLoansCount === 'number'
-          ? repaymentHistoryInput.previousLoansCount
-          : previousApplications.length,
-      time_since_last_loan:
-        typeof repaymentHistoryInput?.timeSinceLastLoan === 'number'
-          ? repaymentHistoryInput.timeSinceLastLoan
-          : timeSinceLastLoan,
-    }
+    const trustedRepaymentHistory = totalPayments > 0
+      ? {
+          on_time_ratio: onTimeRatio,
+          avg_payment_delay_days: avgDelayDays,
+          missed_count: totalDefaults,
+          avg_repayment_ratio: avgPrevRepaymentRatio,
+          previous_loans_count: previousApplications.length,
+          time_since_last_loan: timeSinceLastLoan,
+        }
+      : undefined
 
     const mlPayload = {
       name: user.name,
@@ -219,6 +291,7 @@ export async function POST(request: NextRequest) {
       consent_recharge: consentRecharge || false,
       consent_electricity: consentElectricity || false,
       consent_education: consentEducation || false,
+      consent_bank: consentBankStatement || false,
       consent_bank_statement: consentBankStatement || false,
       application_id: application.applicationId,
       bank_statement: bankStatement
@@ -248,7 +321,7 @@ export async function POST(request: NextRequest) {
             frequency: educationFees.frequency,
           }
         : undefined,
-      repayment_history: mergedRepaymentHistory,
+      repayment_history: trustedRepaymentHistory,
     }
 
     console.log('📊 ML Payload Summary:', {
@@ -271,7 +344,7 @@ export async function POST(request: NextRequest) {
   const mlResult = mlResponse.data
 
       // Update application with ML results
-        const normalizedRiskBand = mlResult.risk_band?.replace(' ', '_').toUpperCase()
+        const normalizedRiskBand = normalizeRiskBand(mlResult.risk_band)
         const riskNeedLabel = mlResult.risk_category
           ? `${mlResult.risk_category} + ${mlResult.risk_band}`
           : `${user.isSociallyDisadvantaged ? 'High Need' : 'Low Need'} + ${mlResult.risk_band ?? 'Unclassified'}`
@@ -286,8 +359,7 @@ export async function POST(request: NextRequest) {
           approvedLoanAmount: mlResult.loan_offer,
           decisionMessage: mlResult.message,
           scoreDetails: mlResult.details ?? null,
-          status: mlResult.status === 'approved' ? 'APPROVED' :
-                  mlResult.status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW',
+          status: statusFromMl(mlResult.status),
           processedAt: new Date(),
           submittedAt: new Date(),
         }
@@ -344,6 +416,7 @@ export async function POST(request: NextRequest) {
             riskBand: updatedApplication.riskBand,
             riskCategory: (updatedApplication as any).riskCategory,
             needCategory: (updatedApplication as any).needCategory,
+            selfReportedRepaymentIgnored: Boolean(repaymentHistoryInput),
           }),
         },
       })

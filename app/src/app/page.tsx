@@ -309,6 +309,108 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* How It Works */}
+      <section id="impact" className="py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+              How SafeCred Works
+            </h2>
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+              Get approved in minutes with our AI-powered credit assessment process
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Connector Lines */}
+            <div className="hidden md:block absolute top-16 left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-1 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200 -z-10"></div>
+            
+            <div className="text-center relative">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl font-bold text-2xl mb-6 shadow-lg">
+                1
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Apply in Minutes</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Fill out a simple form and share alternative data sources like utility bills and mobile recharges.
+              </p>
+            </div>
+            
+            <div className="text-center relative">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl font-bold text-2xl mb-6 shadow-lg">
+                2
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">AI Analysis</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Our machine learning models analyze 100+ data points to calculate your SafeCred Index (SCI) score.
+              </p>
+            </div>
+            
+            <div className="text-center relative">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-2xl font-bold text-2xl mb-6 shadow-lg">
+                3
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">Instant Decision</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Receive approval within 42 minutes on average. Funds disbursed within 24 hours of approval.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section id="resources" className="py-24 bg-slate-50">
+        <div className="container mx-auto px-6">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">
+                Frequently Asked Questions
+              </h2>
+              <p className="text-lg text-slate-600">
+                Everything you need to know about SafeCred
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-slate-900 mb-3">What is the SafeCred Index (SCI)?</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  SCI is our proprietary credit score (0-100) that evaluates your creditworthiness using alternative data. Unlike traditional CIBIL scores, we analyze utility payments, mobile recharges, and social indicators to give you a fair assessment.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-slate-900 mb-3">How fast can I get approved?</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Most applications are processed within 42 minutes. If approved, funds are typically disbursed within 24 hours. Applications requiring manual review may take 2-3 business days.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-slate-900 mb-3">What data do you analyze?</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  We look at bank statements, mobile recharge history, electricity bill payments, education fee payments, SHG membership, and repayment history. The more data you share, the better your chances of approval with favorable terms.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-slate-900 mb-3">Is my data secure?</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Absolutely. We use bank-grade AES-256 encryption and are SOC2 compliant. Your data is never sold to third parties and is only used for credit assessment with your explicit consent.
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 hover:shadow-lg transition-shadow">
+                <h3 className="text-lg font-bold text-slate-900 mb-3">What if I have no credit history?</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  That's our specialty! SafeCred is designed for credit-invisible individuals. We evaluate alternative data to build your credit profile from scratch.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-6">
@@ -333,9 +435,8 @@ export default function HomePage() {
                 </Link>
                 <Link href="/contact">
                   <Button 
-                    size="lg" 
-                    variant="outline" 
-                    className="h-14 px-8 rounded-full border-2 border-white text-white hover:bg-white/10 text-lg font-semibold w-full sm:w-auto"
+                    size="lg"
+                    className="h-14 px-8 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-600 text-lg font-semibold w-full sm:w-auto transition-all duration-200"
                   >
                     Contact Sales
                   </Button>
