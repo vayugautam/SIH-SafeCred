@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
+    "ignoreDeprecations": "6.0",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true
