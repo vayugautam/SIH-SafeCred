@@ -1,402 +1,269 @@
 import { Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth.middleware';
+import { PrismaClient, UserRole, Prisma } from '@prisma/client';
+import axios from 'axios';
 
 const prisma = new PrismaClient();
+const ML_API_URL = process.env.ML_API_URL || 'http://localhost:8002';
 
-const getAdminEmails = (): string[] => {
-  const raw = process.env.ADMIN_EMAILS || 'admin@safecred.com';
-  return raw
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter((email) => email.length > 0);
-};
+const normalizeRiskBand = (riskBand?: string | null) =>
+  riskBand?.replace(' ', '_').toUpperCase() ?? null;
 
-const normalizeRiskBand = (riskBand?: string | null): 'veryLow' | 'low' | 'medium' | 'high' | 'veryHigh' | null => {
-  if (!riskBand) return null;
-  const normalized = riskBand.toLowerCase().replace(/\s+/g, '');
-  if (normalized.includes('verylow')) return 'veryLow';
-  if (normalized.includes('low')) return 'low';
-  if (normalized.includes('medium')) return 'medium';
-  if (normalized.includes('veryhigh')) return 'veryHigh';
-  if (normalized.includes('high')) return 'high';
-  return null;
-};
+const statusFromMl = (status?: string) =>
+  status === 'approved' ? 'APPROVED' :
+  status === 'rejected' ? 'REJECTED' : 'MANUAL_REVIEW';
 
-const calculateAverage = (values: number[]): number => {
-  const safeValues = values.filter((value) => Number.isFinite(value));
-  if (safeValues.length === 0) {
-    return 0;
-  }
-  const total = safeValues.reduce((sum: number, value: number) => sum + value, 0);
-  return total / safeValues.length;
-};
+const RISK_BAND_KEYS = ['LOW_RISK', 'MEDIUM_RISK', 'HIGH_RISK', 'REJECT'] as const;
 
-interface ApplicationWithUser {
-  id: string;
-  applicationId: string;
-  status: string;
-  riskBand: string | null;
-  needCategory: string | null;
-  finalSci: number | null;
-  compositeScore: number | null;
-  mlProbability: number | null;
-  processedAt: Date | null;
-  scoreDetails: unknown;
-  loanAmount: number;
-  createdAt: Date;
-  user: {
-    age: number | null;
-    hasChildren: boolean;
-    isSociallyDisadvantaged: boolean;
-  } | null;
-}
-
-const parseScoreDetails = (scoreDetails: unknown) => {
-  if (!scoreDetails || typeof scoreDetails !== 'object') {
-    return null;
-  }
-  const details = scoreDetails as Record<string, any>;
-  const scoreBreakdown = details.score_breakdown as Record<string, number> | undefined;
-  const combineDetails = details.combine_details as Record<string, any> | undefined;
-
-  const sortedBreakdown = scoreBreakdown
-    ? Object.entries(scoreBreakdown)
-        .map(([factor, score]) => ({ factor, score: Number(score) || 0 }))
-        .sort((a, b) => Math.abs(b.score) - Math.abs(a.score))
-        .slice(0, 5)
-    : [];
-
-  const adjustments: Array<{ key: string; value: number }> = [];
-  if (combineDetails) {
-    Object.entries(combineDetails).forEach(([key, value]) => {
-      if (value && typeof value === 'object' && 'adjusted_final_sci' in (value as Record<string, any>)) {
-        const data = value as Record<string, any>;
-        if (typeof data.adjusted_final_sci === 'number' && typeof data.previous_final_sci === 'number') {
-          adjustments.push({
-            key,
-            value: data.adjusted_final_sci - data.previous_final_sci,
-          });
-        }
-      }
-    });
-  }
-
-  return {
-    topFactors: sortedBreakdown,
-    adjustments,
-  };
-};
-
-export const getAdminAnalytics = async (req: AuthRequest, res: Response) => {
+export const getAnalytics = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.userId) {
-      return res.status(401).json({ error: 'Authentication required' });
-    }
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.userId },
-      select: { email: true },
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const adminEmails = getAdminEmails();
-    if (adminEmails.length > 0 && !adminEmails.includes((user.email || '').toLowerCase())) {
-      return res.status(403).json({ error: 'Admin access required' });
+    if (!user || user.role !== UserRole.ADMIN) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
 
     const applications = await prisma.application.findMany({
       include: {
         user: {
-          select: {
-            age: true,
-            hasChildren: true,
-            isSociallyDisadvantaged: true,
-          },
-        },
-      },
-  }) as ApplicationWithUser[];
+          select: { age: true, hasChildren: true, isSociallyDisadvantaged: true }
+        }
+      }
+    });
 
     const totalApplications = applications.length;
-    const approvedApplications = applications.filter((application) => application.status === 'APPROVED');
-    const rejectedApplications = applications.filter((application) => application.status === 'REJECTED');
-    const pendingApplications = applications.filter((application) =>
-      application.status === 'PROCESSING' || application.status === 'MANUAL_REVIEW'
-    );
+    const approvedApplications = applications.filter((a: any) => a.status === 'APPROVED').length;
+    const rejectedApplications = applications.filter((a: any) => a.status === 'REJECTED').length;
+    const pendingApplications = applications.filter(
+      (a: any) => a.status === 'PROCESSING' || a.status === 'MANUAL_REVIEW'
+    ).length;
+    const manualReviewApplications = applications.filter((a: any) => a.status === 'MANUAL_REVIEW').length;
 
-    const totalLoanAmount: number = applications.reduce((sum: number, application): number => sum + Number(application.loanAmount || 0), 0);
-    const compositeScores: number[] = applications.map((application): number => Number(application.compositeScore ?? 0));
-    const averageRiskScore: number = calculateAverage(compositeScores);
-    const approvalRate = totalApplications > 0 ? (approvedApplications.length / totalApplications) * 100 : 0;
+    const totalLoanAmount = applications.reduce((sum: number, a: any) => sum + (a.loanAmount || 0), 0);
+    const avgRiskScore = applications.length > 0
+      ? applications.reduce((sum: number, a: any) => sum + (a.compositeScore || 0), 0) / applications.length
+      : 0;
+    const approvalRate = totalApplications > 0 ? (approvedApplications / totalApplications) * 100 : 0;
 
-    // Fraud Detection Analysis
-    const suspectedFraudCases = applications.filter((application) => {
-      const scoreDetails = parseScoreDetails(application.scoreDetails);
-      if (!scoreDetails) return false;
-      
-      // Check for negative adjustments indicating fraud
-      const hasNegativeAdjustment = scoreDetails.adjustments.some((adj) => adj.value < -10);
-      const hasLowConsumptionScore = scoreDetails.topFactors.some(
-        (factor) => factor.factor.includes('consumption') && factor.score < -5
-      );
-      
-      return hasNegativeAdjustment || hasLowConsumptionScore;
-    });
-
-    const incomeInflationCases = applications.filter((application) => {
-      const parsed = parseScoreDetails(application.scoreDetails);
-      if (!parsed) return false;
-      
-      // Flag cases with consumption score penalties
-      return parsed.adjustments.some((adj) => 
-        adj.key.includes('consumption') && adj.value < -5
-      );
-    });
-
-    const incomeVerificationStats = {
-      consumptionBasedVerified: applications.filter((application) => {
-        const parsed = parseScoreDetails(application.scoreDetails);
-        return parsed?.topFactors.some((f) => f.factor.includes('consumption'));
-      }).length,
-      bankStatementVerified: applications.filter((application) => {
-        const parsed = parseScoreDetails(application.scoreDetails);
-        return parsed?.topFactors.some((f) => f.factor.includes('bank'));
-      }).length,
-      repaymentHistoryChecked: applications.filter((application) => {
-        const parsed = parseScoreDetails(application.scoreDetails);
-        return parsed?.topFactors.some((f) => f.factor.includes('repay'));
-      }).length,
-      totalVerified: applications.length,
-    };
-
-    const fraudIndicators = [
-      { 
-        indicator: 'Income-Consumption Mismatch', 
-        count: incomeInflationCases.length,
-        severity: 'high'
-      },
-      { 
-        indicator: 'Negative Score Adjustments', 
-        count: suspectedFraudCases.length,
-        severity: 'medium'
-      },
-      { 
-        indicator: 'Missing Verification Data', 
-        count: applications.filter((app) => !parseScoreDetails(app.scoreDetails)).length,
-        severity: 'low'
-      },
-    ];
-
-    const riskDistribution = {
-      veryLow: 0,
-      low: 0,
-      medium: 0,
-      high: 0,
-      veryHigh: 0,
-    };
-
-    const needCategoryBreakdown: Record<string, number> = {};
-    const needCategoryMatrix = {
-      'Low Need + Low Risk': 0,
-      'Low Need + Medium Risk': 0,
-      'Low Need + High Risk': 0,
-      'High Need + Low Risk': 0,
-      'High Need + Medium Risk': 0,
-      'High Need + High Risk': 0,
-    };
-    
-    const lowRiskAutoApprovals = applications.filter(
-      (application) => application.riskBand === 'Low Risk' && application.status === 'APPROVED'
-    );
-
-    applications.forEach((application) => {
-      const bucket = normalizeRiskBand(application.riskBand);
-      if (bucket) {
-        riskDistribution[bucket] += 1;
-      }
-
-      if (application.needCategory) {
-        const key = application.needCategory.trim() || 'Unclassified';
-        needCategoryBreakdown[key] = (needCategoryBreakdown[key] || 0) + 1;
-      }
-
-      // Populate need category matrix
-      const needLevel = application.needCategory?.includes('High Need') ? 'High Need' : 'Low Need';
-      const riskLevel = application.riskBand?.includes('High') ? 'High Risk' : 
-                        application.riskBand?.includes('Medium') ? 'Medium Risk' : 'Low Risk';
-      const matrixKey = `${needLevel} + ${riskLevel}` as keyof typeof needCategoryMatrix;
-      if (matrixKey in needCategoryMatrix) {
-        needCategoryMatrix[matrixKey] += 1;
+    const riskBands = { unscored: 0, veryLow: 0, low: 0, medium: 0, high: 0, veryHigh: 0 };
+    applications.forEach((app: any) => {
+      if (!app.riskBand) { riskBands.unscored++; return; }
+      switch (app.riskBand) {
+        case 'LOW_RISK': riskBands.low++; break;
+        case 'MEDIUM_RISK': riskBands.medium++; break;
+        case 'HIGH_RISK': riskBands.high++; break;
+        case 'REJECT': riskBands.veryHigh++; break;
+        default: riskBands.veryLow++;
       }
     });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const temporalTrends = Array.from({ length: 14 }, (_, index) => {
-      const startOfDay = new Date(today);
-      startOfDay.setDate(today.getDate() - (13 - index));
-      const endOfDay = new Date(startOfDay);
-      endOfDay.setDate(startOfDay.getDate() + 1);
-
-      const applicationsForDay = applications.filter((application) => {
-        const createdAt = application.createdAt ? new Date(application.createdAt) : null;
-        return createdAt ? createdAt >= startOfDay && createdAt < endOfDay : false;
-      });
-
-      const approvalsForDay = applicationsForDay.filter((application) => application.status === 'APPROVED');
-      const averageScoreForDay = calculateAverage(
-        applicationsForDay.map((application) => Number(application.compositeScore ?? 0))
-      );
-
-      return {
-        date: startOfDay.toISOString(),
-        applications: applicationsForDay.length,
-        approvals: approvalsForDay.length,
-        avgRiskScore: Number(averageScoreForDay.toFixed(2)),
-      };
-    });
-
-    const ageBuckets = [
+    const ageGroups = [
       { range: '18-25', count: 0 },
       { range: '26-35', count: 0 },
       { range: '36-45', count: 0 },
       { range: '46-60', count: 0 },
-      { range: '60+', count: 0 },
+      { range: '60+', count: 0 }
     ];
 
-    applications.forEach((application) => {
-      const age = application.user?.age ?? null;
-      if (age === null || age < 18) {
-        return;
-      }
-      if (age <= 25) ageBuckets[0].count += 1;
-      else if (age <= 35) ageBuckets[1].count += 1;
-      else if (age <= 45) ageBuckets[2].count += 1;
-      else if (age <= 60) ageBuckets[3].count += 1;
-      else ageBuckets[4].count += 1;
+    applications.forEach((app: any) => {
+      const age = app.user.age || 30;
+      if (age <= 25) ageGroups[0].count++;
+      else if (age <= 35) ageGroups[1].count++;
+      else if (age <= 45) ageGroups[2].count++;
+      else if (age <= 60) ageGroups[3].count++;
+      else ageGroups[4].count++;
     });
-
-    const withChildrenApplications = applications.filter((application) => application.user?.hasChildren);
-    const sociallyDisadvantagedApplications = applications.filter((application) => application.user?.isSociallyDisadvantaged);
-
-    const hasChildrenCounts = {
-      yes: withChildrenApplications.length,
-      no: applications.filter((application) => !application.user?.hasChildren).length,
-      avgScoreWithChildren: calculateAverage(
-        withChildrenApplications.map((app) => Number(app.compositeScore ?? 0))
-      ),
-    };
-
-    const sociallyDisadvantagedCounts = {
-      yes: sociallyDisadvantagedApplications.length,
-      no: applications.filter((application) => !application.user?.isSociallyDisadvantaged).length,
-      avgScoreDisadvantaged: calculateAverage(
-        sociallyDisadvantagedApplications.map((app) => Number(app.compositeScore ?? 0))
-      ),
-    };
-
-    const sciValues = applications.map((application) => Number(application.finalSci ?? 0));
-    const mlProbabilityValues = applications.map((application) => Number(application.mlProbability ?? 0));
-
-    const highConfidenceApprovals = approvedApplications.filter(
-      (app) => (app.mlProbability ?? 0) > 0.8
-    );
-    const manualReviewCases = applications.filter(
-      (app) => app.status === 'MANUAL_REVIEW'
-    );
-
-    const scoreInsight = {
-      averageFinalSci: calculateAverage(sciValues),
-      averageCompositeScore: averageRiskScore,
-      averageMlProbability: calculateAverage(mlProbabilityValues),
-      autoApprovalRate:
-        totalApplications > 0 ? (lowRiskAutoApprovals.length / totalApplications) * 100 : 0,
-      highConfidenceApprovals: highConfidenceApprovals.length,
-      manualReviewRate:
-        totalApplications > 0 ? (manualReviewCases.length / totalApplications) * 100 : 0,
-    };
-
-    const disbursedLoans = approvedApplications.filter((app) => app.status === 'APPROVED');
-    const loanMetrics = {
-      totalDisbursed: disbursedLoans.length,
-      totalDisbursedAmount: disbursedLoans.reduce((sum: number, app) => sum + Number(app.loanAmount || 0), 0),
-      averageLoanSize: calculateAverage(disbursedLoans.map((app) => Number(app.loanAmount || 0))),
-      largestLoan: Math.max(...disbursedLoans.map((app) => Number(app.loanAmount || 0)), 0),
-      smallestLoan: Math.min(...disbursedLoans.map((app) => Number(app.loanAmount || 0)), 0),
-    };
-
-    const recentDecisions = applications
-      .filter((application) => application.processedAt !== null)
-      .sort((a, b) => (b.processedAt?.getTime() || 0) - (a.processedAt?.getTime() || 0))
-      .slice(0, 10)
-      .map((application) => ({
-        id: application.id,
-        applicationId: application.applicationId,
-        status: application.status,
-        riskBand: application.riskBand,
-        needCategory: application.needCategory,
-        finalSci: application.finalSci,
-        compositeScore: application.compositeScore,
-        processedAt: application.processedAt,
-        scoreDetails: parseScoreDetails(application.scoreDetails),
-      }));
 
     return res.json({
       analytics: {
         overview: {
-          totalApplications,
-          approvedApplications: approvedApplications.length,
-          rejectedApplications: rejectedApplications.length,
-          pendingApplications: pendingApplications.length,
-          totalLoanAmount,
-          averageRiskScore: Number(averageRiskScore.toFixed(2)),
-          approvalRate: Number(approvalRate.toFixed(2)),
+          totalApplications, approvedApplications, rejectedApplications, pendingApplications,
+          totalLoanAmount, averageRiskScore: avgRiskScore, approvalRate
         },
-        fraudDetection: {
-          suspectedFraudCases: suspectedFraudCases.length,
-          incomeInflationCases: incomeInflationCases.length,
-          fraudPercentage: totalApplications > 0 ? Number(((suspectedFraudCases.length / totalApplications) * 100).toFixed(2)) : 0,
-          topIndicators: fraudIndicators.sort((a, b) => b.count - a.count),
-        },
-        incomeVerification: incomeVerificationStats,
-        riskDistribution,
-        needCategoryMatrix,
-        demandSignals: {
-          needCategoryBreakdown,
-          lowRiskAutoApprovals: lowRiskAutoApprovals.length,
-        },
-        temporalTrends,
+        riskDistribution: riskBands,
         demographics: {
-          ageGroups: ageBuckets,
-          hasChildren: hasChildrenCounts,
-          sociallyDisadvantaged: sociallyDisadvantagedCounts,
-        },
-        scoreInsights: {
-          averageFinalSci: Number(scoreInsight.averageFinalSci.toFixed(2)),
-          averageCompositeScore: Number(scoreInsight.averageCompositeScore.toFixed(2)),
-          averageMlProbability: Number(scoreInsight.averageMlProbability.toFixed(3)),
-          autoApprovalRate: Number(scoreInsight.autoApprovalRate.toFixed(2)),
-          highConfidenceApprovals: scoreInsight.highConfidenceApprovals,
-          manualReviewRate: Number(scoreInsight.manualReviewRate.toFixed(2)),
-        },
-        loanMetrics: {
-          totalDisbursed: loanMetrics.totalDisbursed,
-          totalDisbursedAmount: Number(loanMetrics.totalDisbursedAmount.toFixed(2)),
-          averageLoanSize: Number(loanMetrics.averageLoanSize.toFixed(2)),
-          largestLoan: loanMetrics.largestLoan,
-          smallestLoan: loanMetrics.smallestLoan !== Infinity ? loanMetrics.smallestLoan : 0,
-        },
-        recentDecisions,
-      },
+          ageGroups,
+          hasChildren: {
+            yes: applications.filter((a: any) => a.user.hasChildren).length,
+            no: applications.filter((a: any) => !a.user.hasChildren).length
+          },
+          sociallyDisadvantaged: {
+            yes: applications.filter((a: any) => a.user.isSociallyDisadvantaged).length,
+            no: applications.filter((a: any) => !a.user.isSociallyDisadvantaged).length
+          }
+        }
+      }
     });
   } catch (error: any) {
-    console.error('Admin analytics error:', error);
-    return res.status(500).json({
-      error: 'Failed to build analytics dashboard',
-      details: error?.message,
+    console.error('Analytics error:', error);
+    res.status(500).json({ error: 'Failed to fetch analytics', details: error.message });
+  }
+};
+
+export const getDashboardStats = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+
+    if (!user || (user.role !== UserRole.ADMIN && user.role !== UserRole.LOAN_OFFICER)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const [
+      totalApplications,
+      approvedApplications,
+      rejectedApplications,
+      processingApplications,
+      manualReviewApplications,
+      totalUsers,
+      totalLoanAmount,
+      totalApprovedAmount,
+      riskBandStats,
+      disadvantagedLowRisk,
+      disadvantagedApplications,
+      manualQueue
+    ] = await Promise.all([
+      prisma.application.count(),
+      prisma.application.count({ where: { status: 'APPROVED' } }),
+      prisma.application.count({ where: { status: 'REJECTED' } }),
+      prisma.application.count({ where: { status: 'PROCESSING' } }),
+      prisma.application.count({ where: { status: 'MANUAL_REVIEW' } }),
+      prisma.user.count({ where: { role: 'USER' } }),
+      prisma.application.aggregate({ _sum: { loanAmount: true } }),
+      prisma.application.aggregate({ where: { status: 'APPROVED' }, _sum: { approvedLoanAmount: true } }),
+      prisma.application.groupBy({ by: ['riskBand'], _count: true, where: { riskBand: { not: null } } }),
+      prisma.application.count({ where: { riskBand: 'LOW_RISK', user: { isSociallyDisadvantaged: true } } }),
+      prisma.application.count({ where: { user: { isSociallyDisadvantaged: true } } }),
+      prisma.application.findMany({
+        where: { status: { in: ['MANUAL_REVIEW', 'PROCESSING'] } },
+        orderBy: { updatedAt: 'desc' },
+        take: 10,
+        include: { user: { select: { name: true, email: true } } }
+      })
+    ]);
+
+    const riskBandDistribution = RISK_BAND_KEYS.reduce((acc, key) => { acc[key] = 0; return acc; }, {} as any);
+    riskBandStats.forEach((entry: any) => {
+      if (!entry.riskBand) return;
+      const normalized = entry.riskBand.replace(' ', '_').toUpperCase();
+      if (normalized in riskBandDistribution) riskBandDistribution[normalized] = entry._count;
     });
+
+    const fairnessScore = (() => {
+      const totalLowRisk = riskBandDistribution.LOW_RISK || 1;
+      const ratio = disadvantagedLowRisk / totalLowRisk;
+      return Math.min(100, Math.round(70 + ratio * 30));
+    })();
+
+    return res.json({
+      overview: {
+        totalBeneficiaries: totalUsers,
+        totalApplications,
+        approvals: approvedApplications,
+        rejected: rejectedApplications,
+        pending: processingApplications + manualReviewApplications,
+        approvalRate: totalApplications ? Math.round((approvedApplications / totalApplications) * 100) : 0,
+        totalRequested: totalLoanAmount._sum.loanAmount ?? 0,
+        totalDisbursed: totalApprovedAmount._sum.approvedLoanAmount ?? 0,
+        manualReview: manualReviewApplications,
+        fairnessScore,
+      },
+      risk: {
+        distribution: riskBandDistribution,
+        fairnessScore
+      },
+      manualReviewQueue: manualQueue
+    });
+  } catch (error) {
+    console.error('Get dashboard stats error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+type Numeric = number | null | undefined;
+const avg = (values: Numeric[]): number | undefined => {
+  const filtered = values.filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+  if (!filtered.length) return undefined;
+  return filtered.reduce((sum, value) => sum + value, 0) / filtered.length;
+};
+const monthsCovered = (dates: Date[]) => {
+  const labels = new Set<string>();
+  dates.forEach((date) => labels.add(\`\${date.getFullYear()}-\${date.getMonth() + 1}\`));
+  return labels.size || 1;
+};
+
+const computeBankAggregates = (records: any[]) => {
+  if (!records.length) return undefined;
+  const credits = records.map((record) => record.credit ?? 0);
+  const balances = records.map((record) => record.balance ?? 0);
+  const totalCredit = credits.reduce((sum, value) => sum + value, 0);
+  const timelineMonths = monthsCovered(records.map((record) => record.date));
+  return {
+    monthly_credits: Number(((totalCredit / timelineMonths) || 0).toFixed(2)),
+    avg_balance: avg(balances) ? Number(avg(balances)?.toFixed(2)) : undefined,
+  };
+};
+
+export const rescoreApplications = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!user || (user.role !== UserRole.ADMIN && user.role !== UserRole.LOAN_OFFICER)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const { applicationIds, limit = 25 } = req.body;
+    const where: any = {};
+    if (applicationIds?.length) where.applicationId = { in: applicationIds };
+
+    const applications = await prisma.application.findMany({
+      where, orderBy: { updatedAt: 'asc' }, take: limit,
+      include: {
+        user: true, bankStatements: true, rechargeData: true, electricityBills: true, educationFees: true, repaymentHistory: true
+      }
+    });
+
+    if (!applications.length) return res.json({ message: 'No applications found', processed: 0 });
+
+    const successes = [];
+    const failures = [];
+
+    for (const appRecord of applications) {
+      try {
+        const mlPayload = {
+          name: appRecord.user?.name || 'Beneficiary',
+          mobile: appRecord.user?.mobile || '0000000000',
+          email: appRecord.user?.email || 'unknown@safecred.com',
+          age: appRecord.user?.age || 30,
+          has_children: appRecord.user?.hasChildren || false,
+          is_socially_disadvantaged: appRecord.user?.isSociallyDisadvantaged || false,
+          dependents: 0, declared_income: appRecord.declaredIncome, loan_amount: appRecord.loanAmount,
+          tenure_months: appRecord.tenureMonths, purpose: appRecord.purpose || 'Partner Upload', existing_loan_amt: 0,
+          consent_recharge: appRecord.consentRecharge, consent_electricity: appRecord.consentElectricity,
+          consent_education: appRecord.consentEducation, consent_bank: appRecord.consentBankStatement,
+          consent_bank_statement: appRecord.consentBankStatement, application_id: appRecord.applicationId,
+          bank_statement: computeBankAggregates(appRecord.bankStatements),
+        };
+
+        const mlResponse = await axios.post(\`\${ML_API_URL}/apply_direct\`, mlPayload, { timeout: 30000 });
+        const mlResult = mlResponse.data;
+        const normalizedRiskBand = normalizeRiskBand(mlResult.risk_band);
+
+        const updated = await prisma.application.update({
+          where: { id: appRecord.id },
+          data: {
+            mlProbability: mlResult.ml_probability, compositeScore: mlResult.composite_score, finalSci: mlResult.final_sci,
+            riskBand: normalizedRiskBand, approvedLoanAmount: mlResult.loan_offer, decisionMessage: mlResult.message,
+            status: statusFromMl(mlResult.status), processedAt: new Date()
+          }
+        });
+
+        successes.push({ applicationId: updated.applicationId, status: updated.status, finalSci: updated.finalSci });
+      } catch (err: any) {
+        failures.push({ applicationId: appRecord.applicationId, error: err.message });
+      }
+    }
+
+    return res.json({ processed: applications.length, successes, failures });
+  } catch (error: any) {
+    res.status(500).json({ error: 'Failed to trigger re-scoring' });
   }
 };

@@ -8,7 +8,7 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Create new application
+// Create new application and submit to ML simultaneously
 router.post(
   '/',
   [
@@ -24,8 +24,5 @@ router.get('/', applicationController.getUserApplications);
 
 // Get specific application
 router.get('/:id', applicationController.getApplicationById);
-
-// Submit application for ML processing
-router.post('/:id/submit', applicationController.submitApplication);
 
 export default router;

@@ -32,24 +32,30 @@ The system is designed around NBCFDC's non-profit, zero-interest concessional le
 
 ### Manual Start (3 terminals)
 
+**Terminal 1 — ML Scoring Service (Port 8002)**
 ```bash
-# Terminal 1 — ML Scoring Service (Port 8002)
 cd ml
 pip install -r requirements_ml.txt
 python application_api.py
+```
 
-# Terminal 2 — Next.js App (Port 3000)
-cd app
-npm install
-npm run dev
-
-# Terminal 3 — Legacy Backend (Port 3001, optional)
+**Terminal 2 — Backend Setup (Express API on Port 3001)**
+```bash
 cd backend
+npm install
+npx prisma generate
+npx prisma db push
+npm run dev
+```
+
+**Terminal 3 — Frontend Setup (React Vite on Port 5173)**
+```bash
+cd frontend
 npm install
 npm run dev
 ```
 
-**Open the app:** http://localhost:3000
+**Open the app:** http://localhost:5173
 
 ---
 
@@ -57,15 +63,8 @@ npm run dev
 
 ```
 SIH-SafeCred/
-├── app/                        # Next.js 14+ (primary frontend + API routes)
-│   ├── src/app/api/            # Server-side API routes
-│   │   ├── applications/       #   POST — submit loan, GET — list user apps
-│   │   ├── admin/rescore/      #   POST — batch re-score applications
-│   │   ├── admin/applications/ #   GET  — admin application list
-│   │   └── admin/dashboard/    #   GET  — admin analytics
-│   ├── src/components/         # React UI components
-│   ├── src/lib/                # Auth, Prisma client, email, utilities
-│   ├── prisma/schema.prisma    # Database schema (PostgreSQL)
+├── frontend/                   # React + Vite (primary frontend)
+│   ├── src/                    # React components and hooks
 │   └── package.json
 │
 ├── ml/                         # Python ML scoring service (FastAPI)
@@ -80,7 +79,7 @@ SIH-SafeCred/
 │   ├── models/                 # Trained model artifacts (.pkl, metadata)
 │   └── data/                   # Training data (CSV)
 │
-├── backend/                    # Express.js legacy backend (secondary)
+├── backend/                    # Express.js backend
 │   ├── src/controllers/        # Application, auth controllers
 │   ├── prisma/schema.prisma    # Backend DB schema
 │   └── package.json
@@ -235,23 +234,30 @@ Tests cover:
 
 ### Build Verification
 ```bash
-cd app && npm run build     # Next.js build check
-cd backend && npm run build # Express build check
+cd frontend && npm run build # Vite build check
+cd backend && npm run build  # Express build check
 ```
 
 ---
 
 ## 🔧 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 14+ (App Router), React, Tailwind CSS |
-| **Auth** | NextAuth.js (credentials provider) |
-| **Database** | PostgreSQL (Neon serverless), Prisma ORM |
-| **ML API** | FastAPI, Uvicorn, scikit-learn, pandas |
-| **ML Model** | RandomForest (250 estimators, balanced subsample) |
-| **NLP** | Custom purpose analyser + agentic AI reviewer |
-| **Backend (legacy)** | Express.js, Prisma |
+## Tech Stack
+
+- **Frontend:** React + Vite, Tailwind CSS, TypeScript
+- **Backend:** Node.js, Express, Prisma
+- **Database:** PostgreSQL (Aiven)
+- **ML Engine:** Python (FastAPI, Scikit-learn, XGBoost)
+- **Email:** Resend
+
+## Setup Instructions
+
+### 1. Database & Environment
+
+```bash
+# Add your environment variables in the root directory (or respective backend/frontend directories)
+cp .env.example .env
+```
 
 ---
 

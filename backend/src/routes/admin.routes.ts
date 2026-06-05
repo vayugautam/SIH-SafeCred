@@ -1,22 +1,19 @@
 import { Router } from 'express';
+import * as adminController from '../controllers/admin.controller';
 import { authenticate } from '../middleware/auth.middleware';
-import { getAdminAnalytics } from '../controllers/admin.controller';
 
 const router = Router();
 
+// All admin routes require authentication
 router.use(authenticate);
 
-// Main analytics endpoint
-router.get('/analytics', getAdminAnalytics);
+// Admin Dashboard stats
+router.get('/dashboard', adminController.getDashboardStats);
 
-// TODO: Add additional endpoints:
-// - /overview (overview dashboard)
-// - /beneficiaries (beneficiary scoring with pagination)
-// - /beneficiaries/:id (detailed beneficiary drill-down)
-// - /risk-compliance (bias monitoring, audit trails)
-// - /income-verification (income validation monitor)
-// - /model-management (ML model info, re-scoring)
-// - /direct-lending (auto-approval tracking, manual review queue)
-// - /analytics-reports (regional stats, demographic breakdowns)
+// Admin Analytics
+router.get('/analytics', adminController.getAnalytics);
+
+// Admin Rescore
+router.post('/rescore', adminController.rescoreApplications);
 
 export default router;
