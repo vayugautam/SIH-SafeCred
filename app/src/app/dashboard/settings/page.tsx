@@ -78,13 +78,55 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
-          <p className="text-slate-600">Manage your account preferences and security.</p>
-        </div>
-      </div>
+    <div className="container max-w-7xl mx-auto p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+              <p className="text-slate-600">Manage your account preferences and security.</p>
+            </div>
+          </div>
+
+      {/* Security Overview Banner */}
+      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-600 rounded-xl">
+              <Shield className="h-6 w-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-slate-900 mb-2">Your Account is Secure</h3>
+              <p className="text-sm text-slate-600 mb-4">
+                Last login: {formatDate(new Date().toISOString())} • 2-factor authentication: <Badge variant="success" className="ml-1">Enabled</Badge>
+              </p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white/80 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 mb-1">Password Strength</p>
+                  <div className="flex gap-1 mb-2">
+                    <div className="h-1.5 flex-1 bg-green-600 rounded"></div>
+                    <div className="h-1.5 flex-1 bg-green-600 rounded"></div>
+                    <div className="h-1.5 flex-1 bg-green-600 rounded"></div>
+                    <div className="h-1.5 flex-1 bg-slate-200 rounded"></div>
+                  </div>
+                  <span className="text-xs font-medium text-green-700">Strong</span>
+                </div>
+                <div className="bg-white/80 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 mb-1">Active Sessions</p>
+                  <p className="text-2xl font-bold text-slate-900">2</p>
+                  <span className="text-xs text-slate-600">devices</span>
+                </div>
+                <div className="bg-white/80 rounded-lg p-3">
+                  <p className="text-xs text-slate-500 mb-1">Data Shared</p>
+                  <p className="text-2xl font-bold text-slate-900">3/4</p>
+                  <span className="text-xs text-slate-600">sources</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6">
         {/* Notifications */}
@@ -308,6 +350,7 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
         <div className="flex justify-end gap-4">
           <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
@@ -315,7 +358,130 @@ export default function SettingsPage() {
             {isLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
+        </div>
+
+      {/* Sidebar */}
+      <div className="lg:col-span-4 space-y-6">
+        {/* Quick Stats */}
+        <Card className="border-green-200 bg-gradient-to-br from-green-50 to-emerald-50">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Activity className="h-5 w-5 text-green-600" />
+              Account Health
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-slate-600">Security Score</span>
+                <span className="text-lg font-bold text-green-700">92%</span>
+              </div>
+              <div className="h-2 bg-green-100 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-600 w-[92%]"></div>
+              </div>
+            </div>
+            <div className="pt-3 border-t border-green-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-slate-600">2FA Enabled</span>
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-slate-600">Email Verified</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-slate-600">Strong Password</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Privacy Tips */}
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Lock className="h-5 w-5 text-blue-600" />
+              Privacy Tips
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex gap-3">
+              <div className="shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-bold text-blue-600">1</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-900">Review regularly</p>
+                <p className="text-xs text-slate-600">Check your privacy settings monthly</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-bold text-blue-600">2</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-900">Limit data sharing</p>
+                <p className="text-xs text-slate-600">Only share what&apos;s necessary</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-sm font-bold text-blue-600">3</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-900">Audit permissions</p>
+                <p className="text-xs text-slate-600">Review who can access your data</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Eye className="h-5 w-5 text-slate-600" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {auditLogs.slice(0, 3).map((log) => (
+                <div key={log.id} className="flex gap-3 pb-3 border-b border-slate-100 last:border-0">
+                  <div className="shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-slate-900 capitalize">
+                      {log.action.replace(/_/g, ' ')}
+                    </p>
+                    <p className="text-xs text-slate-500">{formatDate(log.createdAt)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Help Card */}
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+          <CardContent className="pt-6">
+            <div className="flex gap-3">
+              <div className="p-2.5 bg-purple-100 rounded-xl shrink-0">
+                <Mail className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900 mb-1">Need Help?</p>
+                <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                  Our support team is here to help you with any questions.
+                </p>
+                <Button size="sm" variant="outline" className="w-full">
+                  Contact Support
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+        </div>
+      </div>
   )
 }

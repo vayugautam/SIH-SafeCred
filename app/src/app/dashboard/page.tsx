@@ -264,6 +264,49 @@ export default function DashboardPage() {
           </Link>
         </div>
 
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white hover:shadow-lg transition-all cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-600 rounded-xl">
+                  <Plus className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <Link href="/apply" className="text-lg font-bold text-slate-900 hover:text-blue-600">New Application</Link>
+                  <p className="text-sm text-slate-600">Apply for instant credit</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-white hover:shadow-lg transition-all cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-600 rounded-xl">
+                  <Activity className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <Link href="/dashboard/profile" className="text-lg font-bold text-slate-900 hover:text-green-600">Boost Score</Link>
+                  <p className="text-sm text-slate-600">Share more data sources</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-white hover:shadow-lg transition-all cursor-pointer">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-600 rounded-xl">
+                  <Target className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <span className="text-lg font-bold text-slate-900">Track Progress</span>
+                  <p className="text-sm text-slate-600">View detailed analytics</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
@@ -398,6 +441,99 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Financial Tips */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-yellow-600" />
+                Financial Tips
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3 p-3 bg-blue-50 rounded-lg">
+                <div className="shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                <div>
+                  <p className="font-medium text-sm text-slate-900">Maintain consistent income</p>
+                  <p className="text-xs text-slate-600">Regular deposits improve creditworthiness by 15-20%</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 bg-green-50 rounded-lg">
+                <div className="shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                <div>
+                  <p className="font-medium text-sm text-slate-900">Share utility bill data</p>
+                  <p className="text-xs text-slate-600">On-time payments boost your SCI score by up to 25 points</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 bg-purple-50 rounded-lg">
+                <div className="shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                <div>
+                  <p className="font-medium text-sm text-slate-900">Keep loan utilization low</p>
+                  <p className="text-xs text-slate-600">Borrowing less than 50% of approved limit is ideal</p>
+                </div>
+              </div>
+              <div className="flex gap-3 p-3 bg-orange-50 rounded-lg">
+                <div className="shrink-0 w-8 h-8 bg-orange-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                <div>
+                  <p className="font-medium text-sm text-slate-900">Complete your profile</p>
+                  <p className="text-xs text-slate-600">100% profile completion increases approval odds by 30%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Award className="h-5 w-5 text-blue-600" />
+                Your Credit Journey
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-900">Profile Completion</span>
+                  <span className="text-sm font-bold text-blue-600">85%</span>
+                </div>
+                <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-600 rounded-full" style={{width: '85%'}}></div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Add mobile number to reach 100%</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-slate-900">Data Sharing Level</span>
+                  <span className="text-sm font-bold text-green-600">Good</span>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1 h-2 bg-green-600 rounded-full"></div>
+                  <div className="flex-1 h-2 bg-green-600 rounded-full"></div>
+                  <div className="flex-1 h-2 bg-green-400 rounded-full"></div>
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full"></div>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Share education data for +10% bonus</p>
+              </div>
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-slate-900 mb-3">Next Milestones</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-xs text-slate-600">First application submitted</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-slate-400" />
+                    <span className="text-xs text-slate-600">Complete 3 on-time payments</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-slate-400" />
+                    <span className="text-xs text-slate-600">Reach SCI score of 750+</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Applications List */}
         <div className="space-y-6">

@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
             Secure account recovery.
           </h2>
           <p className="text-slate-400 text-lg max-w-md">
-            We'll help you get back to your account safely and quickly.
+            We&apos;ll help you get back to your account safely and quickly.
           </p>
         </div>
 
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
               Back to login
             </Link>
             <h1 className="text-3xl font-bold text-slate-900">Reset password</h1>
-            <p className="mt-2 text-slate-600">Enter your email address and we'll send you a link to reset your password.</p>
+            <p className="mt-2 text-slate-600">Enter your email address and we&apos;ll send you a link to reset your password.</p>
           </div>
 
           {isSubmitted ? (

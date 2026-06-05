@@ -39,7 +39,7 @@ export default function ContactPage() {
               Get in touch
             </h1>
             <p className="text-xl text-slate-600 mb-12">
-              Have questions about SafeCred? We're here to help you transform your lending process.
+              Have questions about SafeCred? We&apos;re here to help you transform your lending process.
             </p>
 
             <div className="space-y-8">
