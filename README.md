@@ -1,85 +1,55 @@
-SafeCred — Repository Setup
-==========================
+# SafeCred — AI-Assisted Credit Scoring for NBCFDC Microfinance
 
-Quick start for contributors cloning this repo:
+> Transparent, consent-driven credit scoring for concessional lending to underserved populations — built for **Smart India Hackathon 2025**.
 
-1. Clone the repository:
+---
 
-   ```bash
-   git clone https://github.com/vayugautam/SIH-SafeCred.git
-   cd SIH-SafeCred
-   ```
+## 🎯 What SafeCred Does
 
-2. Frontend (Next.js) setup:
+SafeCred replaces traditional credit-bureau-only scoring with a **composite beneficiary scoring** system designed for India's informal-economy borrowers who lack formal credit histories. It evaluates applicants using:
 
-   ```bash
-   cd app
-   cp .env.example .env   # update values as needed
-   npm install
-   npm run build
-   npm run dev            # or npm start after build
-   ```
+- **Consumption proxies** — mobile recharge patterns, electricity bill consistency, education fee payments
+- **Bank statement analysis** — salary regularity, average balance, payment behaviour
+- **ML probability** — RandomForest model trained on historical application + repayment data
+- **Composite scoring** — weighted pillar scores (financial, repayment, consumption, history) combined into a 0–100 SafeCred Index (SCI)
+- **Agentic AI review** — LLM-powered loan officer agent generates human-readable explanations
 
-3. Backend (API) setup:
-
-   ```bash
-   cd backend
-   cp .env.example .env   # update values (DATABASE_URL, JWT secrets)
-   npm install
-   npm run build
-   npm run start          # runs dist/server.js
-   ```
-
-4. ML models:
-
-   - Model binaries are ignored from the repo. See `ml/README.md` for instructions to train or provide pre-trained models.
-
-Notes:
-- `.gitignore` excludes binary artifacts and caches. The repository contains infrastructure and seed scripts for Prisma; run `prisma:migrate` and `prisma:seed` from the respective folders when configuring databases.
-
-If you want, I can add a script to automatically download model artifacts from a URL or add a Docker Compose for a one-command dev environment.
-# SafeCred - AI-Assisted Credit Scoring for Microfinance
-
-## 🎯 Problem Statement
-SafeCred: AI-assisted credit scoring for concessional lending to underserved populations.
-
-**Current Status:** ✅ **Production Ready!**
+The system is designed around NBCFDC's non-profit, zero-interest concessional lending model.
 
 ---
 
 ## 🚀 Quick Start
 
-### **→ [Complete Setup & Run Guide](HOW_TO_RUN.md)** ⭐
+### Prerequisites
+- **Node.js 18+** and **npm**
+- **Python 3.10+** with pip
+- **PostgreSQL** (or a Neon serverless instance)
 
-For detailed instructions on running the project, see **[HOW_TO_RUN.md](HOW_TO_RUN.md)**
-
-### Fast Start (All Services)
-```powershell
-.\RUN.ps1
-```
-
-Or use the simplified version:
+### All-in-One Start
 ```powershell
 .\START.ps1
 ```
 
-### Manual Start
-```powershell
-# Terminal 1 - ML Service (Port 8002)
+### Manual Start (3 terminals)
+
+```bash
+# Terminal 1 — ML Scoring Service (Port 8002)
 cd ml
-.\.venv\Scripts\Activate
+pip install -r requirements_ml.txt
 python application_api.py
 
-# Terminal 2 - Backend (Port 3001)
-cd backend
+# Terminal 2 — Next.js App (Port 3000)
+cd app
+npm install
 npm run dev
 
-# Terminal 3 - Frontend (Port 3002)
-cd app
+# Terminal 3 — Legacy Backend (Port 3001, optional)
+cd backend
+npm install
 npm run dev
 ```
 
-**Access the application:** http://localhost:3002
+**Open the app:** http://localhost:3000
 
 ---
 
@@ -87,475 +57,232 @@ npm run dev
 
 ```
 SIH-SafeCred/
-├── app/                          # Next.js 14+ Frontend (Main User Interface)
-│   ├── src/app/                  # App directory (routing, pages, layouts)
-│   ├── src/components/           # UI components
-│   ├── src/lib/                  # Utility libraries
-│   ├── src/store/                # State management
-│   ├── prisma/                   # Prisma schema & migrations
-│   ├── package.json              # Frontend dependencies & scripts
-│   └── ...                       # Other Next.js config files
-├── ml/                           # 🤖 ML Models & API
-│   ├── application_api.py        # Application processing API
-│   ├── demo_application.html     # Demo frontend
-│   ├── test_application_api.py   # Test suite
-│   ├── scoring.py                # Risk scoring logic
-│   └── ...                       # Model training, feature extraction, etc.
-├── backend/                      # Node.js backend (API, legacy/Phase 0)
-│   ├── src/                      # Express server, controllers, routes
-│   ├── prisma/                   # Backend DB schema
-│   ├── package.json              # Backend dependencies & scripts
-│   └── ...
-├── docs/                         # Documentation & guides
-│   ├── frontend-integration.md   # Integration guide
-│   ├── QUICKSTART_APPLICATION_API.md
-│   └── ...
-└── infra/                        # Infrastructure configs, synthetic/test data
+├── app/                        # Next.js 14+ (primary frontend + API routes)
+│   ├── src/app/api/            # Server-side API routes
+│   │   ├── applications/       #   POST — submit loan, GET — list user apps
+│   │   ├── admin/rescore/      #   POST — batch re-score applications
+│   │   ├── admin/applications/ #   GET  — admin application list
+│   │   └── admin/dashboard/    #   GET  — admin analytics
+│   ├── src/components/         # React UI components
+│   ├── src/lib/                # Auth, Prisma client, email, utilities
+│   ├── prisma/schema.prisma    # Database schema (PostgreSQL)
+│   └── package.json
+│
+├── ml/                         # Python ML scoring service (FastAPI)
+│   ├── application_api.py      # Main API — POST /apply_direct
+│   ├── scoring.py              # Composite scoring engine (4 pillars)
+│   ├── features_direct.py      # Feature extraction from application data
+│   ├── models_enhanced.py      # Pydantic request models
+│   ├── agents.py               # Agentic AI loan officer
+│   ├── nlp_utils.py            # NLP analysis for loan purpose
+│   ├── train_v2.py             # Model training with dynamic income barrier
+│   ├── test_scoring.py         # Unit tests for scoring logic
+│   ├── models/                 # Trained model artifacts (.pkl, metadata)
+│   └── data/                   # Training data (CSV)
+│
+├── backend/                    # Express.js legacy backend (secondary)
+│   ├── src/controllers/        # Application, auth controllers
+│   ├── prisma/schema.prisma    # Backend DB schema
+│   └── package.json
+│
+├── docs/                       # Documentation & diagrams
+├── HOW_TO_RUN.md               # Detailed setup guide
+└── START.ps1                   # One-command launcher
 ```
 
 ---
 
-## Quick Start
-
-### Option 1: Test ML Application API (Recommended! ⭐)
-
-```bash
-# 1. Install ML dependencies
-cd ml
-pip install -r requirements_ml.txt
-
-# 2. Start the application processing API
-python application_api.py
-
-# 3. Test with demo HTML (open in browser)
-# Open ml/demo_application.html
-# OR run automated tests:
-python test_application_api.py
-```
-
-**Server starts on:** `http://localhost:8002`
-
-**Try it now:**
-1. Open `ml/demo_application.html` in your browser
-2. Fill the form (or press Ctrl+Shift+D for demo data)
-3. Click "Apply for Loan"
-4. Get instant decision! 🎉
-
-### Option 2: Full Stack (Recommended)
-
-#### ML Service (Python/FastAPI)
-```bash
-cd ml
-.\.venv\Scripts\Activate
-python application_api.py   # runs on :8002
-```
-
-#### Backend (Node.js API)
-```bash
-cd backend
-npm install
-npm run dev   # runs Express on :3001
-```
-
-#### Frontend (Next.js 14+)
-```bash
-cd app
-npm install
-npm run dev   # runs Next.js on :3002
-```
-
----
-
-## 📡 API Endpoints
-
-### Application Processing API
+## 📡 ML Scoring API
 
 **Base URL:** `http://localhost:8002`
 
-#### Submit Loan Application
-**POST** `/apply`
+### `POST /apply_direct` — Score a Loan Application
 
-Request:
+**Request:**
 ```json
 {
-  "applicant": {
-    "name": "Ramesh Kumar",
-    "mobile": "9876543210",
-    "age": 35,
-    "has_children": true,
-    "is_socially_disadvantaged": false
+  "name": "Ramesh Kumar",
+  "mobile": "9876543210",
+  "email": "ramesh@example.com",
+  "age": 35,
+  "has_children": true,
+  "is_socially_disadvantaged": true,
+  "dependents": 2,
+  "declared_income": 12000,
+  "loan_amount": 25000,
+  "tenure_months": 12,
+  "purpose": "Small business expansion",
+  "existing_loan_amt": 0,
+  "consent_recharge": true,
+  "consent_electricity": true,
+  "consent_education": true,
+  "consent_bank": true,
+  "bank_statement": {
+    "monthly_credits": 12000,
+    "avg_balance": 5000
   },
-  "loan_details": {
-    "loan_amount": 50000,
-    "tenure_months": 12,
-    "purpose": "Business expansion"
+  "recharge_history": {
+    "frequency": 8,
+    "avg_amount": 249
   },
-  "declared_income": 25000,
-  "consents": {
-    "recharge": true,
-    "electricity": true,
-    "education": false
+  "electricity_bills": {
+    "frequency": 6,
+    "avg_payment": 800,
+    "consistency": 0.85
   }
 }
 ```
 
-Response:
+**Response:**
 ```json
 {
-  "application_id": "APP20251014103000",
+  "application_id": "APP20260605120000",
   "status": "approved",
   "risk_band": "Low Risk",
-  "loan_offer": 26000,
-  "interest_rate": 8.5,
+  "risk_category": "High Need",
+  "loan_offer": 23000,
   "ml_probability": 0.856,
-  "composite_score": 78.5,
-  "final_sci": 82.3,
-  "message": "Congratulations! Your loan application has been approved...",
-  "timestamp": "2025-10-14T10:30:00"
+  "composite_score": 68.5,
+  "final_sci": 74.2,
+  "message": "Congratulations! Your responsible borrowing pattern qualifies you for ₹23,000.",
+  "details": {
+    "score_breakdown": {
+      "user_segment": "low_income_with_proxy_data",
+      "pillar_weights_used": {
+        "financial": 0.20,
+        "repayment": 0.10,
+        "consumption": 0.50,
+        "history": 0.20
+      },
+      "no_history_manual_flag": false
+    },
+    "combine_details": { "ml_weight": 0.6, "composite_weight": 0.4 },
+    "proxy_quality_bonus": 3000,
+    "proxy_quality_reasons": ["healthy recharge pattern", "consistent utility payments"],
+    "base_offer": 20000
+  }
 }
 ```
 
-**📚 Complete API Documentation:**
-- Interactive docs: `http://localhost:8002/docs` (when server running)
-- Integration guide: [`docs/frontend-integration.md`](docs/frontend-integration.md)
-- Quick start: [`docs/QUICKSTART_APPLICATION_API.md`](docs/QUICKSTART_APPLICATION_API.md)
-
-#### How the ML API Works
-
-```
-User clicks "Apply" → POST /apply
-    ↓
-Save application data
-    ↓
-Extract features (bank, recharge, electricity, education)
-    ↓
-Run ML model (predict default probability)
-    ↓
-Calculate composite score
-    ↓
-Determine risk band (Low/Medium/High/Reject)
-    ↓
-Calculate loan offer & interest rate
-    ↓
-Return decision (200-500ms)
-```
-
-**Risk Bands & Offers:**
-
-| Risk Band | SCI Score | Base Offer | Interest Rate | Status |
-|-----------|-----------|------------|---------------|---------|
-| Low Risk | 80-100 | ₹20,000 | 8.5% | Auto-approved |
-| Medium Risk | 60-79 | ₹12,000 | 10.5% | Manual review |
-| High Risk | 40-59 | ₹6,000 | 12.5% | Manual review |
-| Reject | 0-39 | ₹0 | - | Rejected |
-
-**Consent Bonuses:**
-- Each consent (recharge/electricity/education): +₹1,000 to ₹3,000
-- Maximum bonus: ₹9,000
-- Encourages data sharing for better assessment
+**Interactive API docs:** http://localhost:8002/docs
 
 ---
 
-### Backend API Endpoints
+## 🧠 How Scoring Works
 
-**Base URL:** `http://localhost:3001`
+```
+Applicant submits loan → POST /apply_direct
+    │
+    ├─ 1. Extract features from application data
+    │     (bank, recharge, electricity, education, repayment)
+    │
+    ├─ 2. Compute Composite Score (0–100)
+    │     ├─ Financial pillar  (income stability, savings)
+    │     ├─ Repayment pillar  (loan history, on-time ratio)
+    │     ├─ Consumption pillar (proxy behaviour consistency)
+    │     └─ History pillar    (time since last loan, defaults)
+    │
+    ├─ 3. ML Model predicts default probability
+    │     (RandomForest, 13 features, composite_score included)
+    │
+    ├─ 4. Combine: Final SCI = 0.6 × ML + 0.4 × Composite
+    │
+    ├─ 5. Map to Risk Band + Need Category
+    │
+    ├─ 6. Agentic AI generates explanation
+    │
+    └─ 7. Return decision (< 500ms)
+```
 
-#### Create User
-**POST** `/api/users`  
-Request:
-```json
-{
-  "name": "Vayu",
-  "mobile": "9956189165",
-  "email": "vayu@example.com"
-}
-```
-Response:
-```json
-{
-  "id": "user_abc123",
-  "name": "Vayu",
-  "mobile": "9956189165"
-}
-```
+### Risk Bands
+
+| Band | SCI Threshold | Base Offer | Decision |
+|------|--------------|------------|----------|
+| **Low Risk** | ≥ 70 | ₹20,000 | Auto-approved (if no manual flags) |
+| **Medium Risk** | ≥ 50 | ₹12,000 | Manual review |
+| **High Risk** | ≥ 40 | ₹6,000 | Manual review |
+| **Reject** | < 40 | ₹0 | Rejected |
+
+> **Note:** NBCFDC concessional lending charges no interest. Offers are capped at the requested loan amount. Additional bonus (₹1,500–₹2,000) is added per proxy channel only when the uploaded data shows positive behaviour — consent alone does not boost offers.
+
+### Applicant Segmentation
+
+| Segment | Trigger | Evaluation Focus |
+|---------|---------|-----------------|
+| Low Income, No Bank Data | Income < barrier, no bank statement | 50% consumption weight |
+| Low Income, With Bank Data | Income < barrier, bank data present | 35% financial, 45% consumption |
+| High Income, Good History | Income ≥ barrier, repayment data | 40% repayment weight |
+| High Income, No History | Income ≥ barrier, no prior loans | ⚠️ Forced manual review |
+| New User, No Data | First-time, no proxies | Conservative defaults |
 
 ---
 
-### Create Loan Application
-**POST** `/api/applications`  
-Request:
-```json
-{
-  "userId": "user_abc123",
-  "income": 40000,
-  "loan_amount": 120000,
-  "tenure_months": 12
-}
-```
-Response:
-```json
-{
-  "applicationId": "app_9876",
-  "status": "CREATED"
-}
-```
+## 🧪 Testing
 
----
-
-### Upload Document
-**POST** `/api/applications/:id/documents`  
-Multipart form-data fields:  
-- `file` → file binary (CSV, salary slip, electricity bill)  
-- `type` → `csv` | `salary` | `bill`  
-
-Response:
-```json
-{
-  "documentId": "doc_555",
-  "applicationId": "app_9876",
-  "status": "UPLOADED"
-}
-```
-
----
-
-## 🔧 Testing Commands
-
-**Create user:**
-```bash
-curl -X POST http://localhost:3001/api/users \
--H "Content-Type: application/json" \
--d '{"name":"Vayu","mobile":"9999999999"}'
-```
-
-**Create application:**
-```bash
-curl -X POST http://localhost:3001/api/applications \
--H "Content-Type: application/json" \
--d '{"userId":"user_abc123","income":40000,"loan_amount":100000,"tenure_months":12}'
-```
-
-**Upload document:**
-```bash
-curl -X POST http://localhost:3001/api/applications/app_9876/documents \
--F "file=@/path/to/file.pdf" \
--F "type=salary"
-```
-
----
-
-## 🧪 Testing the ML Application API
-
-### Method 1: Demo HTML (Easiest!)
-1. Start API: `python ml/application_api.py`
-2. Open `ml/demo_application.html` in browser
-3. Fill form or press **Ctrl+Shift+D** for demo data
-4. Click "Apply for Loan"
-5. See instant results!
-
-### Method 2: Automated Tests
+### ML Scoring Tests
 ```bash
 cd ml
-python test_application_api.py
+python test_scoring.py -v
 ```
 
-Tests include:
-- ✅ Health check
-- ✅ Low risk application (auto-approval)
-- ✅ Medium risk application (manual review)
-- ✅ New user application
-- ✅ Status check
+Tests cover:
+- Low-income no-bank → correct consumption weighting
+- High-income no-history → forced manual review
+- High-income good-history → can achieve low risk
+- Reject band for SCI < 40
+- Consent without data → no fake bonus
+- `consent_bank` / `consent_bank_statement` alias compatibility
 
-### Method 3: cURL
+### Build Verification
 ```bash
-curl -X POST http://localhost:8002/apply \
-  -H "Content-Type: application/json" \
-  -d '{
-    "applicant": {
-      "name": "Test User",
-      "mobile": "9876543210",
-      "age": 30,
-      "has_children": false,
-      "is_socially_disadvantaged": false
-    },
-    "loan_details": {
-      "loan_amount": 30000,
-      "tenure_months": 12,
-      "purpose": "Business"
-    },
-    "declared_income": 25000,
-    "consents": {
-      "recharge": true,
-      "electricity": true,
-      "education": false
-    }
-  }'
+cd app && npm run build     # Next.js build check
+cd backend && npm run build # Express build check
 ```
-
----
-
-## 📚 Documentation
-
-### For ML Application Processing
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Complete overview of new features
-- **[docs/QUICKSTART_APPLICATION_API.md](docs/QUICKSTART_APPLICATION_API.md)** - Quick start guide
-- **[docs/frontend-integration.md](docs/frontend-integration.md)** - Frontend integration guide
-- **[ml/README_APPLICATION_API.md](ml/README_APPLICATION_API.md)** - Detailed API documentation
-
-### Architecture & Design
-- **[docs/orchestration.md](docs/orchestration.md)** - System orchestration logic
-- **[docs/risk-bands.md](docs/risk-bands.md)** - Risk band definitions
-- **[docs/gitworkflows.md](docs/gitworkflows.md)** - Git workflows
-
----
-
-## ✨ Implemented Features
-
-### Core Functionality
-- ✅ AI-powered credit scoring with fairness considerations
-- ✅ Real-time loan application processing (200-500ms response time)
-- ✅ Multi-factor risk assessment using ML models
-- ✅ Proxy data integration (electricity, recharge, education bills)
-- ✅ Composite scoring algorithm with income barriers
-- ✅ Role-based access control (User, Admin, Loan Officer)
-
-### Frontend Features
-- ✅ Modern responsive UI with Next.js 14+ and React
-- ✅ Glassmorphism effects and gradient animations
-- ✅ User authentication with NextAuth.js
-- ✅ Interactive dashboards for users and admins
-- ✅ Multi-step loan application forms
-- ✅ Real-time application status tracking
-
-### Backend & API
-- ✅ RESTful API with Node.js and Express
-- ✅ FastAPI-based ML service with auto-generated docs
-- ✅ PostgreSQL database with Prisma ORM
-- ✅ Automated feature extraction and model inference
-- ✅ Comprehensive error handling and logging
-- ✅ CORS configuration and security middleware
-
-### Developer Experience
-- ✅ Complete documentation (HOW_TO_RUN.md, API docs)
-- ✅ Automated startup scripts (RUN.ps1, START.ps1)
-- ✅ Testing suite for ML API
-- ✅ Development environment setup guides
-- ✅ Git workflows and contribution guidelines
-
----
-
-## 👨‍💻 Team
-
-- **Divya Ratna Gautam (Lead, AI/ML)** — ML model, API development, system architecture, integration
-- **Ayush Singh (AI/ML Developer)** — ML module, scoring logic, model training
-- **Sudhanshu Pal (Backend Developer)** — Node.js + Express API, DB schema, document endpoints
-- **Arvind Kumar Singh (Frontend & Backend Developer)** — React + Tailwind UI, form validation
-- **Vivek Chaudhary (Frontend Developer)** — React UI, styling, user experience
 
 ---
 
 ## 🔧 Tech Stack
 
-### ML & API
-- **Python 3.10+**
-- **FastAPI** - Modern web framework
-- **Uvicorn** - ASGI server
-- **Pydantic** - Data validation
-- **scikit-learn** - ML models
-- **pandas** - Data processing
-- **joblib** - Model serialization
-
-### Backend
-- **Node.js** - Runtime
-- **Express** - Web framework
-- **Prisma** - ORM for PostgreSQL
-- **PostgreSQL (Neon)** - Serverless database
-- **NextAuth.js** - Authentication
-- **JWT** - Token-based auth
-
-### Frontend
-- **Next.js 14+** - React framework (App Router)
-- **React** - UI library
-- **Tailwind CSS** - Styling
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 14+ (App Router), React, Tailwind CSS |
+| **Auth** | NextAuth.js (credentials provider) |
+| **Database** | PostgreSQL (Neon serverless), Prisma ORM |
+| **ML API** | FastAPI, Uvicorn, scikit-learn, pandas |
+| **ML Model** | RandomForest (250 estimators, balanced subsample) |
+| **NLP** | Custom purpose analyser + agentic AI reviewer |
+| **Backend (legacy)** | Express.js, Prisma |
 
 ---
 
-## 🚀 Performance
+## 🔒 Trust Boundaries & Fairness
 
-- **Response Time**: 200-500ms per application
-- **Throughput**: 100+ requests/second (single instance)
-- **Model Accuracy**: Based on training metrics
-- **Scalability**: Horizontal scaling ready
-
----
-
-## 🔒 Security Features
-
-- Input validation with Pydantic models
-- Type safety throughout
-- Error handling & logging
-- Rate limiting ready
-- CORS configuration
-- HTTPS ready for production
+- **Consent-gated data**: Proxy features are only extracted when the user explicitly grants consent for each channel
+- **Quality-aware bonuses**: Loan offer bonuses require positive behavioural data — consent alone is not enough
+- **Trusted repayment only**: Only stored/partner/admin repayment records affect automated scoring; self-reported history is logged but ignored
+- **No hardcoded overrides**: Scoring API returns raw SCI — no backend route independently inflates scores
+- **Explainable decisions**: Every response includes `score_breakdown` with segment, pillar weights, and flag explanations
+- **Dynamic poverty barrier**: Income threshold for low-income segmentation is computed from data distribution, not hardcoded
 
 ---
 
-## 💡 Key Features
+## 👨‍💻 Team
 
-### 1. Instant Decisions
-- Sub-second response times
-- No manual intervention for low-risk cases
-- Immediate feedback to applicants
-
-### 2. Multi-Factor Assessment
-- ML model prediction
-- Composite scoring (repayment, income, lifestyle)
-- Historical data analysis
-- Proxy data integration
-
-### 3. Fair & Inclusive
-- Special consideration for socially disadvantaged groups
-- Transparent scoring
-- Explainable AI (feature importance)
-
-### 4. Data Privacy
-- Consent-based data collection
-- Encrypted storage
-- GDPR/privacy compliant ready
-
-### 5. Scalable Architecture
-- Microservices ready
-- Containerized deployment
-- Cloud-native design
+| Member | Role |
+|--------|------|
+| **Divya Ratna Gautam** | Lead — ML, API, system architecture |
+| **Ayush Singh** | AI/ML — scoring logic, model training |
+| **Sudhanshu Pal** | Backend — Express API, DB schema |
+| **Arvind Kumar Singh** | Full-stack — React UI, form validation |
+| **Vivek Chaudhary** | Frontend — styling, user experience |
 
 ---
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
-## 📞 Support
-
-For questions or issues:
-1. Check documentation files
-2. Review API docs at `/docs` endpoint
-3. Run test suite to verify setup
-4. Contact: vayugautam@gmail.com
-
----
-
-**Built with ❤️ for Smart India Hackathon 2025**
-
-**Last Updated:** November 5, 2025
+**Built for Smart India Hackathon 2025**
+**Last Updated:** June 2026
