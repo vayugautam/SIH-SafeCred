@@ -1,0 +1,29 @@
+{
+  "dataset": {
+    "n_samples": 5000,
+    "n_train": 4000,
+    "n_test": 1000
+  },
+  "selected_model": "HistGradientBoosting",
+  "metrics": {
+    "roc_auc": 0.641,
+    "brier_score": 0.0947,
+    "gini": 0.283
+  },
+  "fairness_metrics": {
+    "False": {
+      "approval_rate": 1.0,
+      "tpr": 1.0,
+      "fpr": 1.0,
+      "count": 407
+    },
+    "True": {
+      "approval_rate": 1.0,
+      "tpr": 1.0,
+      "fpr": 1.0,
+      "count": 593
+    }
+  },
+  "training_date": "2026-06-11T22:24:21.713765",
+  "n_features": 16
+}

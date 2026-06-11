@@ -40,7 +40,7 @@ export const register = async (req: Request, res: Response) => {
         mobile,
         password: hashedPassword,
         name,
-        role: role || 'borrower',
+        role: 'borrower',
         age: age ? parseInt(age.toString()) : null,
         hasChildren: hasChildren === true || hasChildren === 'true',
         isSociallyDisadvantaged: isSociallyDisadvantaged === true || isSociallyDisadvantaged === 'true'
@@ -60,11 +60,15 @@ export const register = async (req: Request, res: Response) => {
 
     console.log('User created successfully:', user.id);
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not defined');
+    }
+
     // Generate JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'default-secret-key',
-      { expiresIn: process.env.JWT_EXPIRE || '7d' } as jwt.SignOptions
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '24h' } as jwt.SignOptions
     );
 
     res.status(201).json({
@@ -102,10 +106,15 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is not defined');
+    }
+
     // Generate JWT
     const token = jwt.sign(
-      { userId: user.id },
-      (process.env.JWT_SECRET || 'default-secret-key') as jwt.Secret
+      { userId: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET as jwt.Secret,
+      { expiresIn: process.env.JWT_EXPIRE || '24h' } as jwt.SignOptions
     );
 
     res.json({
@@ -135,7 +144,11 @@ export const verifyToken = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, (process.env.JWT_SECRET || 'default-secret-key') as jwt.Secret) as { userId: string };
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as jwt.Secret) as { userId: string };
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },

@@ -43,7 +43,7 @@ app = FastAPI(
 loan_officer = LoanOfficerAgent()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3002", "http://localhost:3001", "http://localhost:3000"],
+    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -287,8 +287,9 @@ async def apply_direct(application: EnhancedLoanApplication):
             f.write(f"Application ID: {application.application_id}\n")
         
         application_payload = application.model_dump()
+        safe_payload = {k: v for k, v in application_payload.items() if k not in ["full_name", "email", "mobile", "pan_number", "aadhaar_number"]}
         print(f"[ML API] Received application: {application.application_id}")
-        print(f"[ML API] Application data: {application_payload}")
+        print(f"[ML API] Application data (redacted): {safe_payload}")
         
         # Load model if not loaded
         if not load_ml_model():

@@ -4,6 +4,20 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import { sendEmail, applicationSubmittedEmail, adminNotificationEmail } from '../utils/email';
+import { logAudit } from '../utils/auditLog';
+
+// Helper function for retrying axios calls
+const axiosWithRetry = async (url: string, data: any, config: any, retries = 3): Promise<any> => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await axios.post(url, data, config);
+    } catch (error: any) {
+      if (i === retries - 1) throw error;
+      console.log(`ML API request failed, retrying (${i + 1}/${retries})...`);
+      await new Promise(res => setTimeout(res, 1000 * Math.pow(2, i))); // exponential backoff
+    }
+  }
+};
 
 const prisma = new PrismaClient();
 
@@ -57,6 +71,20 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
       educationFees,
       repaymentHistory: repaymentHistoryInput,
     } = req.body;
+
+    // Idempotency check: prevent duplicate submissions within 5 minutes
+    const recentApplication = await prisma.application.findFirst({
+      where: {
+        userId: req.userId,
+        createdAt: {
+          gte: new Date(Date.now() - 5 * 60 * 1000) // 5 minutes ago
+        }
+      }
+    });
+
+    if (recentApplication) {
+      return res.status(429).json({ error: 'Please wait a few minutes before submitting another application.' });
+    }
 
     // Get user details
     const user = await prisma.user.findUnique({
@@ -272,7 +300,7 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
     console.log('🤖 Calling ML API at:', `${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct`);
 
     try {
-      const mlResponse = await axios.post(`${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct`, mlPayload, {
+      const mlResponse = await axiosWithRetry(`${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct`, mlPayload, {
         timeout: 30000,
       });
 
@@ -324,20 +352,18 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
         },
       });
 
-      await prisma.auditLog.create({
-        data: {
-          userId: user.id,
-          action: 'application_submitted',
-          entity: 'Application',
-          entityId: application.id,
-          details: JSON.stringify({
-            applicationId: application.applicationId,
-            loanAmount: loanAmount,
-            status: updatedApplication.status,
-            riskBand: updatedApplication.riskBand,
-          }),
+      await logAudit(
+        'application_submitted',
+        user.id,
+        application.id,
+        {
+          applicationId: application.applicationId,
+          loanAmount: loanAmount,
+          status: updatedApplication.status,
+          riskBand: updatedApplication.riskBand,
         },
-      });
+        req.ip || ''
+      );
 
       // Send emails
       try {

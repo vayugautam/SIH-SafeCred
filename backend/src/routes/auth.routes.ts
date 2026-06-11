@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
 import * as authController from '../controllers/auth.controller';
+import { authRateLimiter } from '../middleware/security';
 
 const router = Router();
 
 // Register
 router.post(
   '/register',
+  authRateLimiter,
   [
     body('email').isEmail().normalizeEmail(),
     body('mobile').isLength({ min: 10, max: 15 }).matches(/^[0-9+\-\s()]+$/),
@@ -20,6 +22,7 @@ router.post(
 // Login
 router.post(
   '/login',
+  authRateLimiter,
   [
     body('email').isEmail().normalizeEmail(),
     body('password').notEmpty(),

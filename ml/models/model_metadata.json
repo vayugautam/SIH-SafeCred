@@ -1,28 +1,63 @@
 {
-  "version": "2.1.0",
-  "model": "RandomForestClassifier",
-  "train_time": "2026-06-03T16:30:40.179539",
-  "n_samples": 100,
-  "n_features": 13,
+  "version": "2.2.0",
+  "model": "HistGradientBoosting",
+  "calibrated": true,
+  "train_time": "2026-06-11T22:24:21.713765",
+  "n_samples": 5000,
+  "n_features": 16,
   "features": [
     "declared_income",
+    "monthly_expenses",
+    "savings_balance",
+    "asset_value",
     "loan_amount",
     "tenure",
-    "socio_flag",
-    "has_children",
-    "consent_recharge",
-    "consent_electricity",
-    "consent_education",
+    "age",
+    "mobile_age_months",
+    "address_stability_years",
+    "prob_good",
     "previous_loans_count",
     "previous_defaults",
-    "avg_prev_repayment_ratio",
-    "time_since_last_loan",
-    "composite_score"
+    "debt_to_income_ratio",
+    "avg_monthly_saving",
+    "lifestyle_index",
+    "suspicion_score"
   ],
-  "dynamic_income_barrier": 9900.0,
-  "logic": {
-    "percentile_base": 35,
-    "repayment_weight": true,
-    "socio_adjustment": true
+  "dynamic_income_barrier": 11200.0,
+  "metrics": {
+    "roc_auc": 0.641,
+    "brier_score": 0.0947,
+    "gini": 0.283
+  },
+  "models_compared": [
+    {
+      "name": "RandomForest",
+      "roc_auc": 0.628,
+      "brier_score": 0.0948
+    },
+    {
+      "name": "HistGradientBoosting",
+      "roc_auc": 0.641,
+      "brier_score": 0.1305
+    },
+    {
+      "name": "LogisticRegression",
+      "roc_auc": 0.631,
+      "brier_score": 0.2391
+    }
+  ],
+  "fairness_metrics": {
+    "False": {
+      "approval_rate": 1.0,
+      "tpr": 1.0,
+      "fpr": 1.0,
+      "count": 407
+    },
+    "True": {
+      "approval_rate": 1.0,
+      "tpr": 1.0,
+      "fpr": 1.0,
+      "count": 593
+    }
   }
 }

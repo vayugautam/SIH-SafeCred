@@ -6,6 +6,10 @@ import applicationRoutes from './routes/application.routes';
 import userRoutes from './routes/user.routes';
 import adminRoutes from './routes/admin.routes';
 import notificationRoutes from './routes/notification.routes';
+import fairnessRoutes from './routes/fairness.routes';
+import { securityHeaders, generalRateLimiter, bodySizeLimit, urlEncodedLimit } from './middleware/security';
+import { requestLogger } from './middleware/requestLogger';
+import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
 
@@ -13,12 +17,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+app.use(requestLogger);
+app.use(securityHeaders);
+app.use(generalRateLimiter);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodySizeLimit);
+app.use(urlEncodedLimit);
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -26,6 +33,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/fairness', fairnessRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -37,13 +45,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('❌ Express Error:', err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
+app.use(errorHandler);
 
 // Process error handlers
 process.on('uncaughtException', (error) => {

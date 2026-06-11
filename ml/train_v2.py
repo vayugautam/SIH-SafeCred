@@ -18,10 +18,13 @@ import json
 from datetime import datetime
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.preprocessing import StandardScaler
+from calibration import evaluate_calibration, calibrate_model
+from fairness import compute_fairness_metrics
 
 from features import build_feature_matrix
 from scoring import compute_composite_score, aggregate_loan_history_metrics
@@ -191,33 +194,85 @@ def train_and_save():
     # --- Step 6: Prepare training data ---
     print("🧠 Preparing training matrix ...")
     df.fillna(0, inplace=True)
-    X = df.drop(columns=["user_id", "target", "repay_weight"], errors="ignore")
+    # Drop composite_score to avoid data leakage
+    leakage_cols = ["user_id", "target", "repay_weight", "composite_score"]
+    X = df.drop(columns=[col for col in leakage_cols if col in df.columns], errors="ignore")
     y = df["target"]
 
     X_numeric = X.select_dtypes(include=["number"])
     feature_names = list(X_numeric.columns)
 
+    # Temporal split if application_date exists
+    if "application_date" in df.columns:
+        df_sorted = df.sort_values("application_date")
+        split_idx = int(len(df_sorted) * 0.8)
+        train_idx = df_sorted.index[:split_idx]
+        test_idx = df_sorted.index[split_idx:]
+        
+        X_train_raw = X_numeric.loc[train_idx]
+        X_test_raw = X_numeric.loc[test_idx]
+        y_train = y.loc[train_idx]
+        y_test = y.loc[test_idx]
+        # Keep track of sensitive attrs for fairness
+        sensitive_test = df.loc[test_idx, "is_socially_disadvantaged"] if "is_socially_disadvantaged" in df.columns else None
+    else:
+        # Fallback to random split
+        X_train_raw, X_test_raw, y_train, y_test, _, sensitive_test = train_test_split(
+            X_numeric, y, df.get("is_socially_disadvantaged", [0]*len(df)), test_size=0.2, random_state=42, stratify=y
+        )
+
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_numeric)
+    X_train = scaler.fit_transform(X_train_raw)
+    X_test = scaler.transform(X_test_raw)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42, stratify=y
-    )
-
-    # --- Step 7: Train model ---
-    print("🚀 Training RandomForest ...")
-    clf = RandomForestClassifier(
-        n_estimators=250,
-        random_state=42,
-        class_weight="balanced_subsample",
-        n_jobs=-1
-    )
-    clf.fit(X_train, y_train)
-
+    # --- Step 7: Train models ---
+    print("🚀 Training baseline models ...")
+    
+    models = {
+        "RandomForest": RandomForestClassifier(n_estimators=250, random_state=42, class_weight="balanced_subsample", n_jobs=-1),
+        "HistGradientBoosting": HistGradientBoostingClassifier(random_state=42, class_weight="balanced"),
+        "LogisticRegression": LogisticRegression(random_state=42, class_weight="balanced", max_iter=1000)
+    }
+    
+    best_auc = 0
+    best_model_name = ""
+    best_clf = None
+    eval_results = []
+    
+    for name, clf in models.items():
+        clf.fit(X_train, y_train)
+        probs = clf.predict_proba(X_test)[:, 1]
+        auc = roc_auc_score(y_test, probs)
+        brier, _, _ = evaluate_calibration(clf, X_test, y_test)
+        
+        eval_results.append({
+            "name": name,
+            "roc_auc": round(auc, 3),
+            "brier_score": round(brier, 4)
+        })
+        
+        if auc > best_auc:
+            best_auc = auc
+            best_model_name = name
+            best_clf = clf
+            
+    print(f"🏆 Best model: {best_model_name} with AUC {best_auc:.3f}")
+    
+    # Calibrate best model
+    calibrated_clf = calibrate_model(best_clf, X_train, y_train, method='isotonic', cv=3)
+    clf = calibrated_clf # Use calibrated for saving
+    
     # --- Step 8: Evaluate model ---
-    print("\n📊 Evaluation:")
-    preds = clf.predict(X_test)
+    print("\n📊 Final Evaluation:")
     probs = clf.predict_proba(X_test)[:, 1]
+    preds = clf.predict(X_test)
+    
+    brier, _, _ = evaluate_calibration(clf, X_test, y_test)
+    gini = 2 * best_auc - 1
+    
+    fairness_metrics = {}
+    if sensitive_test is not None:
+        fairness_metrics = compute_fairness_metrics(y_test, preds, sensitive_test)
 
     print(classification_report(y_test, preds))
     print("ROC-AUC:", round(roc_auc_score(y_test, probs), 3))
@@ -234,29 +289,48 @@ def train_and_save():
 
     meta = {
         "version": "2.2.0",
-        "model": "RandomForestClassifier",
+        "model": best_model_name,
+        "calibrated": True,
         "train_time": datetime.now().isoformat(),
         "n_samples": len(df),
         "n_features": len(feature_names),
         "features": feature_names,
         "dynamic_income_barrier": dynamic_barrier,
-        "logic": {
-            "percentile_base": 35,
-            "repayment_weight": True,
-            "socio_adjustment": True,
-            "derived_features": [
-                "debt_to_income_ratio",
-                "avg_monthly_saving",
-                "lifestyle_index",
-                "suspicion_score",
-                "on_time_ratio",
-                "avg_payment_delay_days",
-            ]
-        }
+        "metrics": {
+            "roc_auc": round(best_auc, 3),
+            "brier_score": round(brier, 4),
+            "gini": round(gini, 3)
+        },
+        "models_compared": eval_results,
+        "fairness_metrics": fairness_metrics
     }
 
     with open(meta_path, "w") as f:
         json.dump(meta, f, indent=2)
+        
+    # Also save evaluation_report.json
+    eval_report_path = os.path.join(MODELS_DIR, "evaluation_report.json")
+    with open(eval_report_path, "w") as f:
+        eval_report = {
+            "dataset": {
+                "n_samples": len(df),
+                "n_train": len(X_train_raw),
+                "n_test": len(X_test_raw)
+            },
+            "selected_model": best_model_name,
+            "metrics": meta["metrics"],
+            "fairness_metrics": fairness_metrics,
+            "training_date": meta["train_time"],
+            "n_features": len(feature_names)
+        }
+        json.dump(eval_report, f, indent=2)
+    
+    # Auto-generate model card
+    try:
+        from model_card import generate_model_card
+        generate_model_card(eval_report_path)
+    except Exception as e:
+        print("Could not generate model card:", e)
 
     print(f"\n✅ Model and metadata saved in {MODELS_DIR}")
     print(f"   • safecred_model.pkl")

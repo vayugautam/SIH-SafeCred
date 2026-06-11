@@ -13,7 +13,11 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    if (!process.env.JWT_SECRET) {
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
     req.userId = decoded.userId;
     next();
   } catch (error) {

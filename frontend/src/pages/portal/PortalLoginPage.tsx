@@ -208,8 +208,6 @@ export default function PortalLoginPage() {
         </div>
       </div>
 
-      </div>
-
       {/* 5. FOOTER */}
       <div className="bg-[#0A1628] px-6 py-8 text-center shrink-0">
         <h4 className="text-white font-black text-lg mb-2">NBCFDC SafeCred</h4>
