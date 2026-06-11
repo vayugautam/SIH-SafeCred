@@ -1,4 +1,5 @@
-# SafeCred — AI-Assisted Credit Scoring for NBCFDC Microfinance
+# SafeCred Platform
+— AI-Assisted Credit Scoring for NBCFDC Microfinance
 
 > Transparent, consent-driven credit scoring for concessional lending to underserved populations — built for **Smart India Hackathon 2025**.
 
