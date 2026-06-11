@@ -1,0 +1,90 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: worker-service-secrets
+  namespace: nbcfdc-credit-scoring
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: worker-service-env
+  dataFrom:
+  - extract:
+      key: secret/nbcfdc/worker
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-deployment
+  namespace: nbcfdc-credit-scoring
+  labels:
+    app: worker-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker-service
+  template:
+    metadata:
+      labels:
+        app: worker-service
+    spec:
+      containers:
+      - name: worker-service
+        image: registry.nbcfdc.gov.in/safecred-worker:latest
+        envFrom:
+        - secretRef:
+            name: worker-service-env
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        # Using HTTP checks per instructions (assumes a lightweight health endpoint/sidecar runs on 8002)
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8002
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: worker-service-hpa
+  namespace: nbcfdc-credit-scoring
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worker-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: worker-service-pdb
+  namespace: nbcfdc-credit-scoring
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: worker-service

@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nbcfdc-credit-scoring
+  labels:
+    environment: production
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: cluster-quota
+  namespace: nbcfdc-credit-scoring
+spec:
+  hard:
+    limits.cpu: "20"
+    limits.memory: "40Gi"
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all-ingress
+  namespace: nbcfdc-credit-scoring
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: safecred-ingress
+  namespace: nbcfdc-credit-scoring
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - safecred.nbcfdc.gov.in
+    secretName: safecred-tls-secret
+  rules:
+  - host: safecred.nbcfdc.gov.in
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8000
+      - path: /auth
+        pathType: Prefix
+        backend:
+          service:
+            name: keycloak
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80

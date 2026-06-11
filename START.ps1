@@ -7,7 +7,7 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
-$APP_DIR = Join-Path $SCRIPT_DIR "app"
+$APP_DIR = Join-Path $SCRIPT_DIR "frontend"
 $BACKEND_DIR = Join-Path $SCRIPT_DIR "backend"
 $ML_DIR = Join-Path $SCRIPT_DIR "ml"
 
@@ -45,10 +45,10 @@ if (-Not (Test-Path "$APP_DIR\node_modules")) {
 Write-Host ""
 Write-Host "[2/4] Checking database setup..." -ForegroundColor Yellow
 
-if (-Not (Test-Path "$APP_DIR\.env")) {
+if (-Not (Test-Path "$BACKEND_DIR\.env")) {
     Write-Host "[ERROR] .env file not found!" -ForegroundColor Red
-    Write-Host "Please create app\.env with your database configuration" -ForegroundColor Yellow
-    Write-Host "See app\.env.example for template" -ForegroundColor Yellow
+    Write-Host "Please create backend\.env with your database configuration" -ForegroundColor Yellow
+    Write-Host "See backend\.env.example for template" -ForegroundColor Yellow
     exit 1
 }
 

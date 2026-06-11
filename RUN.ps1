@@ -7,7 +7,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 $SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
-$APP_DIR = Join-Path $SCRIPT_DIR "app"
+$APP_DIR = Join-Path $SCRIPT_DIR "frontend"
 $BACKEND_DIR = Join-Path $SCRIPT_DIR "backend"
 $ML_DIR = Join-Path $SCRIPT_DIR "ml"
 
@@ -37,13 +37,13 @@ function Stop-PortIfBusy {
 }
 
 # Check if .env exists
-if (-not (Test-Path (Join-Path $APP_DIR ".env"))) {
+if (-not (Test-Path (Join-Path $BACKEND_DIR ".env"))) {
     Write-Host "⚠ .env file not found. Please run SETUP_AND_RUN.ps1 first." -ForegroundColor Red
     exit 1
 }
 
 # Load environment variables
-Get-Content (Join-Path $APP_DIR ".env") | ForEach-Object {
+Get-Content (Join-Path $BACKEND_DIR ".env") | ForEach-Object {
     if ($_ -match '^DATABASE_URL="(.+)"$') {
         $env:DATABASE_URL = $matches[1]
     }

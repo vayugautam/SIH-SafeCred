@@ -223,11 +223,11 @@ export default function Home() {
                       Get started
                     </Button>
                   </Link>
-                  <Link to="/contact">
+                  <a href="mailto:sales@safecred.com">
                     <Button size="lg" variant="outline" className="h-12 rounded-full border-slate-700 px-6 text-white hover:bg-white hover:text-slate-950">
                       Talk to sales
                     </Button>
-                  </Link>
+                  </a>
                 </div>
               </div>
             </div>

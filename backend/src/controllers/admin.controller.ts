@@ -187,7 +187,7 @@ const avg = (values: Numeric[]): number | undefined => {
 };
 const monthsCovered = (dates: Date[]) => {
   const labels = new Set<string>();
-  dates.forEach((date) => labels.add(\`\${date.getFullYear()}-\${date.getMonth() + 1}\`));
+  dates.forEach((date) => labels.add(`${date.getFullYear()}-${date.getMonth() + 1}`));
   return labels.size || 1;
 };
 
@@ -243,7 +243,7 @@ export const rescoreApplications = async (req: AuthRequest, res: Response) => {
           bank_statement: computeBankAggregates(appRecord.bankStatements),
         };
 
-        const mlResponse = await axios.post(\`\${ML_API_URL}/apply_direct\`, mlPayload, { timeout: 30000 });
+        const mlResponse = await axios.post(`${ML_API_URL}/apply_direct`, mlPayload, { timeout: 30000 });
         const mlResult = mlResponse.data;
         const normalizedRiskBand = normalizeRiskBand(mlResult.risk_band);
 
@@ -251,7 +251,7 @@ export const rescoreApplications = async (req: AuthRequest, res: Response) => {
           where: { id: appRecord.id },
           data: {
             mlProbability: mlResult.ml_probability, compositeScore: mlResult.composite_score, finalSci: mlResult.final_sci,
-            riskBand: normalizedRiskBand, approvedLoanAmount: mlResult.loan_offer, decisionMessage: mlResult.message,
+            riskBand: normalizedRiskBand as any, approvedLoanAmount: mlResult.loan_offer, decisionMessage: mlResult.message,
             status: statusFromMl(mlResult.status), processedAt: new Date()
           }
         });

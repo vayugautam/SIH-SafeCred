@@ -1,0 +1,42 @@
+version: "3.9"
+
+x-backend-prod: &backend-prod
+  build:
+    context: ./backend
+    target: prod
+  # Security Hardening for Distroless
+  read_only: true
+  security_opt:
+    - no-new-privileges:true
+  tmpfs:
+    - /tmp
+  # Remove Compose-level limits, use Swarm/K8s deploy syntax for prod
+  mem_limit: 0
+  cpus: "0"
+  deploy:
+    resources:
+      limits:
+        cpus: '2.0'
+        memory: 2G
+
+services:
+  api:
+    <<: *backend-prod
+    command: ["/opt/venv/bin/uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    # Distroless has no curl, so we disable the standard CMD healthcheck, relying on K8s/Swarm HTTP probes
+    healthcheck:
+      disable: true
+
+  worker:
+    <<: *backend-prod
+    command: ["/opt/venv/bin/celery", "-A", "app.tasks.celery_app", "worker", "-l", "info", "--concurrency=8"]
+
+  beat:
+    <<: *backend-prod
+    command: ["/opt/venv/bin/celery", "-A", "app.tasks.celery_app", "beat", "-l", "info"]
+
+  ml_service:
+    <<: *backend-prod
+    command: ["/opt/venv/bin/uvicorn", "app.ml.inference:app", "--host", "0.0.0.0", "--port", "8001"]
+    healthcheck:
+      disable: true

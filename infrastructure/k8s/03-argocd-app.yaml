@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: safecred-production
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/org/nbcfdc-k8s'
+    path: manifests/
+    targetRevision: HEAD
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: nbcfdc-credit-scoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

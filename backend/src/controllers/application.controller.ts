@@ -121,7 +121,7 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
               if (!paidOnTime) paidDate.setDate(paidDate.getDate() + 7);
 
               return {
-                month: \`\${billDate.getFullYear()}-\${String(billDate.getMonth() + 1).padStart(2, '0')}\`,
+                month: `${billDate.getFullYear()}-${String(billDate.getMonth() + 1).padStart(2, '0')}`,
                 billDate,
                 dueDate,
                 amount: electricityBills.avgPayment ?? 0,
@@ -142,7 +142,7 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
               if (!paidOnTime) paidDate.setDate(paidDate.getDate() + 10);
 
               return {
-                academicYear: \`\${dueDate.getFullYear()}-\${String((dueDate.getFullYear() + 1) % 100).padStart(2, '0')}\`,
+                academicYear: `${dueDate.getFullYear()}-${String((dueDate.getFullYear() + 1) % 100).padStart(2, '0')}`,
                 amount: educationFees.avgFee ?? 0,
                 dueDate,
                 paidDate,
@@ -269,10 +269,10 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
       repayment_history: trustedRepaymentHistory,
     };
 
-    console.log('🤖 Calling ML API at:', \`\${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct\`);
+    console.log('🤖 Calling ML API at:', `${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct`);
 
     try {
-      const mlResponse = await axios.post(\`\${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct\`, mlPayload, {
+      const mlResponse = await axios.post(`${process.env.ML_API_URL || 'http://localhost:8002'}/apply_direct`, mlPayload, {
         timeout: 30000,
       });
 
@@ -280,8 +280,8 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
 
       const normalizedRiskBand = normalizeRiskBand(mlResult.risk_band);
       const riskNeedLabel = mlResult.risk_category
-        ? \`\${mlResult.risk_category} + \${mlResult.risk_band}\`
-        : \`\${user.isSociallyDisadvantaged ? 'High Need' : 'Low Need'} + \${mlResult.risk_band ?? 'Unclassified'}\`;
+        ? `${mlResult.risk_category} + ${mlResult.risk_band}`
+        : `${user.isSociallyDisadvantaged ? 'High Need' : 'Low Need'} + ${mlResult.risk_band ?? 'Unclassified'}`;
 
       const updateData: any = {
         mlProbability: mlResult.ml_probability,
@@ -320,7 +320,7 @@ export const createApplication = async (req: AuthRequest, res: Response) => {
           title: 'Loan Application Processed',
           message: mlResult.message,
           type: mlResult.status === 'approved' ? 'success' : mlResult.status === 'rejected' ? 'error' : 'info',
-          link: \`/dashboard/applications/\${application.applicationId}\`,
+          link: `/dashboard/applications/${application.applicationId}`,
         },
       });
 

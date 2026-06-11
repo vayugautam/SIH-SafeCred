@@ -140,22 +140,22 @@ export function NotificationBell() {
                 <div
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={\`p-4 cursor-pointer hover:bg-slate-50 transition-colors \${
+                  className={`p-4 cursor-pointer hover:bg-slate-50 transition-colors ${
                     !notification.isRead ? 'bg-blue-50/50' : ''
-                  }\`}
+                  }`}
                 >
                   <div className="flex gap-3">
-                    <div className={\`w-2 h-2 rounded-full mt-2 shrink-0 \${
+                    <div className={`w-2 h-2 rounded-full mt-2 shrink-0 ${
                       !notification.isRead ? 'bg-blue-600' : 'bg-transparent'
-                    }\`} />
+                    }`} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 mb-1">
-                        <h4 className={\`text-sm font-medium \${
+                        <h4 className={`text-sm font-medium ${
                           !notification.isRead ? 'text-slate-900' : 'text-slate-700'
-                        }\`}>
+                        }`}>
                           {notification.title}
                         </h4>
-                        <span className={\`text-xs px-2 py-0.5 rounded \${getTypeColor(notification.type)}\`}>
+                        <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(notification.type)}`}>
                           {notification.type}
                         </span>
                       </div>

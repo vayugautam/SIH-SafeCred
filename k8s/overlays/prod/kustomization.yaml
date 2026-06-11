@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# In production, we might want to scale up the minimum replicas
+patches:
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: api-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 4
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: frontend-hpa
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 4
+
+# Or modify image tags specifically for prod
+images:
+  - name: ghcr.io/nbcfdc/safecred-api
+    newTag: v1.0.0-prod
+  - name: ghcr.io/nbcfdc/safecred-frontend
+    newTag: v1.0.0-prod

@@ -86,11 +86,11 @@ export function FinancialInsights({ coaching_tips, lender_notes, risk_band, comp
               {final_sci && (
                 <div>
                   <p className="text-xs text-slate-500 mb-1">SafeCred Index</p>
-                  <p className={\`text-3xl font-bold \${
+                  <p className={`text-3xl font-bold ${
                     final_sci >= 70 ? 'text-green-600' :
                     final_sci >= 50 ? 'text-yellow-600' :
                     'text-red-600'
-                  }\`}>
+                  }`}>
                     {final_sci.toFixed(0)}/100
                   </p>
                 </div>

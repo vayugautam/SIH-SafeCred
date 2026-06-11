@@ -1,0 +1,222 @@
+version: "3.9"
+
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+    target: dev
+  env_file: .env
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    kafka:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+  # Dev Resource limits as requested
+  mem_limit: 1g
+  cpus: "1.0"
+
+services:
+  # ==========================================
+  # CORE SERVICES
+  # ==========================================
+  api:
+    <<: *backend-common
+    container_name: safecred_api
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    <<: *backend-common
+    container_name: safecred_worker
+    command: ["celery", "-A", "app.tasks.celery_app", "worker", "-l", "info", "--concurrency=4"]
+
+  beat:
+    <<: *backend-common
+    container_name: safecred_beat
+    command: ["celery", "-A", "app.tasks.celery_app", "beat", "-l", "info"]
+
+  ml_service:
+    <<: *backend-common
+    container_name: safecred_ml
+    command: ["uvicorn", "app.ml.inference:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # DATABASES & BROKERS
+  # ==========================================
+  postgres:
+    image: postgres:15
+    container_name: safecred_postgres
+    env_file: .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb:
+    image: mongo:6.0
+    container_name: safecred_mongo
+    env_file: .env
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: safecred_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ==========================================
+  # KAFKA EVENT STREAMING
+  # ==========================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: safecred_zookeeper
+    env_file: .env
+    healthcheck:
+      test: ["CMD", "echo", "ruok", "|", "nc", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: safecred_kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    env_file: .env
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # IDENTITY & OBSERVABILITY
+  # ==========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: safecred_keycloak
+    env_file: .env
+    command: start-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.6.0
+    container_name: safecred_mlflow
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      --default-artifact-root s3://safecred-models
+      --host 0.0.0.0
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flower:
+    image: mher/flower:3.0.0
+    container_name: safecred_flower
+    env_file: .env
+    ports:
+      - "5555:5555"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # OBJECT STORAGE
+  # ==========================================
+  minio:
+    image: minio/minio:RELEASE.2023-08-09T23-30-22Z
+    container_name: safecred_minio
+    env_file: .env
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc
+    container_name: safecred_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file: .env
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb myminio/safecred-raw --ignore-existing;
+      /usr/bin/mc mb myminio/safecred-features --ignore-existing;
+      /usr/bin/mc mb myminio/safecred-models --ignore-existing;
+      /usr/bin/mc mb myminio/safecred-audit --ignore-existing;
+      exit 0;
+      "
+
+volumes:
+  pgdata:
+  mongodata:
+  miniodata:

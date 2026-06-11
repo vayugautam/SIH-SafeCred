@@ -1,0 +1,12 @@
+groups:
+  - name: celery_rescoring_alerts
+    rules:
+      - alert: HighCeleryQueueDepth
+        expr: celery_queue_length{queue="celery"} > 1000
+        for: 5m
+        labels:
+          severity: critical
+          service: safecred_ml_workers
+        annotations:
+          summary: "Celery Task Queue exceeds 1000 messages."
+          description: "The ML rescoring workers are falling behind the Kafka ingestion rate. Immediate scaling of Celery pods is required."

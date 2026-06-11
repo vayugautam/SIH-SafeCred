@@ -1,0 +1,273 @@
+version: '3.8'
+
+x-logging: &default-logging
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+x-limits: &default-limits
+  deploy:
+    resources:
+      limits:
+        cpus: '1.0'
+        memory: 1G
+
+services:
+  # ==========================================
+  # 1. CORE API & WORKERS
+  # ==========================================
+  api:
+    build: .
+    container_name: safecred_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    <<: *default-logging
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    build: .
+    container_name: safecred_celery_worker
+    command: ["python", "-m", "celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--concurrency=4"]
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: *default-limits
+
+  beat:
+    build: .
+    container_name: safecred_celery_beat
+    command: ["python", "-m", "celery", "-A", "app.tasks.celery_app", "beat", "--loglevel=info"]
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    <<: *default-limits
+
+  flower:
+    image: mher/flower:latest
+    container_name: safecred_flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      # Password protection can be added via basic auth args
+    depends_on:
+      redis:
+        condition: service_healthy
+    <<: *default-limits
+
+  # ==========================================
+  # 2. INTELLIGENCE LAYER
+  # ==========================================
+  ml_service:
+    build: .
+    container_name: safecred_ml_inference
+    command: ["python", "-m", "uvicorn", "app.api.v1.routes.scoring:router", "--host", "0.0.0.0", "--port", "8001"]
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      retries: 3
+
+  mlflow:
+    image: python:3.11-slim
+    container_name: safecred_mlflow
+    command: >
+      bash -c "pip install mlflow boto3 psycopg2-binary &&
+               mlflow server --host 0.0.0.0 --port 5000"
+    ports:
+      - "5000:5000"
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=${MINIO_ROOT_USER:-minio_admin}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD:-minio_secret_password}
+    depends_on:
+      minio:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    <<: *default-limits
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      retries: 3
+
+  # ==========================================
+  # 3. DATABASES & CACHE
+  # ==========================================
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: safecred_postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-safecred_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-safecred_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-safecred_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safecred_user -d safecred_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    <<: *default-limits
+
+  mongodb:
+    image: mongo:7.0
+    container_name: safecred_mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-mongo_user}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-mongo_pass}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    <<: *default-limits
+
+  redis:
+    image: redis:7-alpine
+    container_name: safecred_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    <<: *default-limits
+
+  minio:
+    image: minio/minio:latest
+    container_name: safecred_minio
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minio_admin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minio_secret_password}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      retries: 3
+    <<: *default-limits
+
+  # ==========================================
+  # 4. EVENT STREAMING
+  # ==========================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: safecred_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181 || exit 1"]
+      interval: 20s
+      retries: 3
+    <<: *default-limits
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: safecred_kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+  # ==========================================
+  # 5. SECURITY & IDENTITY
+  # ==========================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: safecred_keycloak
+    command: start-dev
+    environment:
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN_USER:-admin}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-safecred_db}
+      - KC_DB_USERNAME=${POSTGRES_USER:-safecred_user}
+      - KC_DB_PASSWORD=${POSTGRES_PASSWORD:-safecred_pass}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e \"GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n\" >&3;grep \"200 OK\" <&3"]
+      interval: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+
+volumes:
+  pg_data:
+  mongo_data:
+  minio_data:

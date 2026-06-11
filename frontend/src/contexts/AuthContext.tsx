@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (decoded.exp * 1000 > Date.now()) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
-          axios.defaults.headers.common['Authorization'] = \`Bearer \${storedToken}\`;
+          axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         } else {
           localStorage.removeItem('safecred_token');
           localStorage.removeItem('safecred_user');
@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(newUser);
     localStorage.setItem('safecred_token', newToken);
     localStorage.setItem('safecred_user', JSON.stringify(newUser));
-    axios.defaults.headers.common['Authorization'] = \`Bearer \${newToken}\`;
+    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
   };
 
   const logout = () => {

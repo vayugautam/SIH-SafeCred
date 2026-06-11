@@ -23,7 +23,7 @@ export default function Login() {
     setError('');
 
     try {
-      const response = await axios.post('/api/users/login', formData);
+      const response = await axios.post('/api/auth/login', formData);
       const { user, token } = response.data;
       
       login(token, user);

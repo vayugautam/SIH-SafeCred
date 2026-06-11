@@ -1,0 +1,14 @@
+groups:
+- name: CeleryAlerts
+  rules:
+  - alert: CeleryQueueDepthCritical
+    # Requires a prometheus exporter for celery/redis like 'celery-exporter'
+    expr: celery_queue_length > 1000
+    for: 5m
+    labels:
+      severity: critical
+      team: ml_ops
+    annotations:
+      summary: "High Celery Queue Depth (instance {{ $labels.instance }})"
+      description: "The Celery task queue depth has exceeded 1,000 tasks for more than 5 minutes. Current depth: {{ $value }}."
+      runbook_url: "https://wiki.safecred.io/runbooks/celery-queue-backed-up"

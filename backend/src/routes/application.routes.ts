@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import * as applicationController from '../controllers/application.controller';
+import { createApplication, getUserApplications, getApplicationById } from '../controllers/application.controller';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -16,13 +16,13 @@ router.post(
     body('loanAmount').isFloat({ min: 1000 }),
     body('tenureMonths').isInt({ min: 1, max: 60 }),
   ],
-  applicationController.createApplication
+  createApplication
 );
 
 // Get user's applications
-router.get('/', applicationController.getUserApplications);
+router.get('/', getUserApplications);
 
 // Get specific application
-router.get('/:id', applicationController.getApplicationById);
+router.get('/:id', getApplicationById);
 
 export default router;

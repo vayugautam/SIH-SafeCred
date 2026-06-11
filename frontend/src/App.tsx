@@ -1,52 +1,62 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import Apply from './pages/Apply';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/shared/ProtectedRoute';
+import LoginPage from './pages/auth/LoginPage';
+import AdminLayout from './layouts/AdminLayout';
+import DashboardPage from './pages/dashboard/DashboardPage';
+import BeneficiaryDirectory from './pages/beneficiaries/BeneficiaryDirectory';
+import BeneficiaryProfilePage from './pages/beneficiaries/BeneficiaryProfilePage';
+import ScoreExplorerPage from './pages/explorer/ScoreExplorerPage';
+import RiskHeatMapPage from './pages/map/RiskHeatMapPage';
+import LendingQueuePage from './pages/lending/LendingQueuePage';
+import LoanApplicationDetailPage from './pages/lending/LoanApplicationDetailPage';
+import AnalyticsHubPage from './pages/analytics/AnalyticsHubPage';
+import DataUploadPage from './pages/ingestion/DataUploadPage';
+import AuditTrailPage from './pages/audit/AuditTrailPage';
+import SystemAdminPage from './pages/admin/SystemAdminPage';
 
-function ProtectedRoute({ children, adminOnly = false }: { children: JSX.Element, adminOnly?: boolean }) {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
-  if (adminOnly && user.role !== 'ADMIN' && user.role !== 'LOAN_OFFICER') {
-    return <Navigate to="/dashboard" replace />;
-  }
-  return children;
-}
+// Portal
+import PortalLayout from './layouts/PortalLayout';
+import PortalLoginPage from './pages/portal/PortalLoginPage';
+import PortalScorePage from './pages/portal/PortalScorePage';
+import PortalApplyLoanPage from './pages/portal/PortalApplyLoanPage';
+import PortalDashboardPage from './pages/portal/PortalDashboardPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          
-          <Route path="/apply" element={
-            <ProtectedRoute>
-              <Apply />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/admin" element={
-            <ProtectedRoute adminOnly>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Protected Routes inside AdminLayout */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<AdminLayout />}>
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="beneficiaries" element={<BeneficiaryDirectory />} />
+            <Route path="beneficiaries/:id" element={<BeneficiaryProfilePage />} />
+            <Route path="score-explorer" element={<ScoreExplorerPage />} />
+            <Route path="map" element={<RiskHeatMapPage />} />
+            <Route path="lending" element={<LendingQueuePage />} />
+            <Route path="lending/:appId" element={<LoanApplicationDetailPage />} />
+            <Route path="analytics" element={<AnalyticsHubPage />} />
+            <Route path="data-upload" element={<DataUploadPage />} />
+            <Route path="audit" element={<AuditTrailPage />} />
+            <Route path="admin" element={<SystemAdminPage />} />
+          </Route>
+        </Route>
+
+        {/* Mobile Beneficiary Portal Routes */}
+        <Route path="/portal/login" element={<PortalLoginPage />} />
+        <Route path="/portal" element={<PortalLayout />}>
+          <Route index element={<Navigate to="/portal/dashboard" replace />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="dashboard" element={<PortalDashboardPage />} />
+            <Route path="my-score" element={<PortalScorePage />} />
+            <Route path="apply-loan" element={<PortalApplyLoanPage />} />
+          </Route>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

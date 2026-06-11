@@ -156,8 +156,8 @@ export default function Register() {
           </div>
 
           <div className="flex items-center gap-2 mb-8">
-            <div className={\`h-2 flex-1 rounded-full \${step >= 1 ? 'bg-blue-600' : 'bg-slate-100'}\`}></div>
-            <div className={\`h-2 flex-1 rounded-full \${step >= 2 ? 'bg-blue-600' : 'bg-slate-100'}\`}></div>
+            <div className={`h-2 flex-1 rounded-full ${step >= 1 ? 'bg-blue-600' : 'bg-slate-100'}`}></div>
+            <div className={`h-2 flex-1 rounded-full ${step >= 2 ? 'bg-blue-600' : 'bg-slate-100'}`}></div>
           </div>
 
           <form onSubmit={step === 1 ? (e) => { e.preventDefault(); handleNext(); } : handleSubmit} className="space-y-6">
@@ -336,7 +336,7 @@ export default function Register() {
               )}
               <Button 
                 type="submit" 
-                className={\`h-11 bg-slate-900 hover:bg-slate-800 text-white \${step === 1 ? 'w-full' : 'w-2/3'}\`}
+                className={`h-11 bg-slate-900 hover:bg-slate-800 text-white ${step === 1 ? 'w-full' : 'w-2/3'}`}
                 disabled={isLoading}
               >
                 {isLoading ? (
