@@ -11,8 +11,8 @@ services:
         value: production
       - key: PORT
         value: 3001
-      - key: CORS_ORIGINS
-        value: https://safecred.vercel.app # We will update this later with your Vercel URL
+      - key: FRONTEND_URL
+        value: https://sih-safe-cred.vercel.app
       - key: DATABASE_URL
         sync: false # Set this in the Render dashboard
       - key: JWT_SECRET
@@ -31,4 +31,4 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: CORS_ORIGINS
-        value: https://safecred-api.onrender.com,https://safecred.vercel.app
+        value: https://safecred-api.onrender.com,https://sih-safe-cred.vercel.app
