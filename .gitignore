@@ -33,3 +33,5 @@ __pycache__/
 Thumbs.db
 coverage/
 \n# ML model artifacts\nml/models/*.pkl\nml/models/*.joblib\nml/models/*.sav\n
+
+ml/venv/
