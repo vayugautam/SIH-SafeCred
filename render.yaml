@@ -1,0 +1,34 @@
+services:
+  # 1. Backend (Node.js / Express)
+  - type: web
+    name: safecred-backend
+    env: node
+    region: singapore # Change to your preferred region (e.g. oregon, frankfurt)
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: CORS_ORIGINS
+        value: https://safecred.vercel.app # We will update this later with your Vercel URL
+      - key: DATABASE_URL
+        sync: false # Set this in the Render dashboard
+      - key: JWT_SECRET
+        generateValue: true # Render will auto-generate a secure random secret
+      - key: ML_API_URL
+        value: https://safecred-ml.onrender.com # The URL of the ML service below
+
+  # 2. ML API (Python / FastAPI)
+  - type: web
+    name: safecred-ml
+    env: python
+    region: singapore
+    buildCommand: cd ml && pip install -r requirements_ml.txt && python train_v2.py
+    startCommand: cd ml && uvicorn application_api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: CORS_ORIGINS
+        value: https://safecred-api.onrender.com,https://safecred.vercel.app
