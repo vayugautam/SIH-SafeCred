@@ -21,7 +21,7 @@ app.use(requestLogger);
 app.use(securityHeaders);
 app.use(generalRateLimiter);
 app.use(cors({
-  origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+  origin: true,
   credentials: true
 }));
 app.use(bodySizeLimit);
