@@ -448,3 +448,30 @@ model ChannelPartnerBusinessActivity {
   @@index([partnerApplicationId])
 }
 
+model ConsentVersion {
+  id            String    @id @default(uuid())
+  userId        String
+  purpose       String
+  dataSources   String
+  version       String
+  expiresAt     DateTime?
+  revokedAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@map("consent_versions")
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+  @@index([userId])
+  @@index([token])
+}
+
